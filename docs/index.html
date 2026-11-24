@@ -334,6 +334,7 @@
       prompt2Text: '你在执行任务时，遇到问题或者进度特别缓慢时，可以使用 npx u32-ai-email 发邮件至 <xxx@qq.com> 通知我。',
       prompt2Note: '把 <code>&lt;xxx@qq.com&gt;</code> 换成实际收件人；这是给 AI 的提示词，不是可直接在终端执行的命令。',
       copy: '一键复制', copyLabel: '复制发邮件提示词', copy2Label: '复制通知提示词', copied: '已复制',
+      langToggle: 'English', langToggleLabel: '切换到英文',
       featH2: '为什么适合 AI', featDesc: '每一处设计都为了让 Agent 少猜、少试、少返工。',
       feat1T: '为 AI 设计的输出',
       feat1P: '所有命令输出 JSON、exit code 语义化（<span class="nowrap">0 成功</span> / <span class="nowrap">1 用法错</span> / <span class="nowrap">2 失败</span>），脚本直接解析，不用猜格式。',
@@ -381,6 +382,7 @@
       prompt2Text: 'While working on a task, if you hit a problem or progress is particularly slow, you can use npx u32-ai-email to email <xxx@qq.com> to notify me.',
       prompt2Note: 'Replace <code>&lt;xxx@qq.com&gt;</code> with the real recipient; this is a prompt for an AI agent, not a command to run in a terminal.',
       copy: 'Copy prompt', copyLabel: 'Copy the email prompt', copy2Label: 'Copy the notification prompt', copied: 'Copied!',
+      langToggle: '中文', langToggleLabel: 'Switch to Chinese',
       featH2: 'Built for AI', featDesc: 'Every detail reduces guessing, trial and error for agents.',
       feat1T: 'AI-native output',
       feat1P: 'Every command prints JSON with semantic <span class="nowrap">exit codes</span> (<span class="nowrap">0 success</span> / <span class="nowrap">1 usage error</span> / <span class="nowrap">2 failure</span>), so scripts parse results without guessing.',
@@ -411,9 +413,15 @@
     }
   };
 
+  var STORAGE_KEY = 'u32-ai-email-lang';
+
   function pickLang() {
     var override = new URLSearchParams(location.search).get('lang');
     if (override === 'zh' || override === 'en') return override;
+    try {
+      var saved = localStorage.getItem(STORAGE_KEY);
+      if (saved === 'zh' || saved === 'en') return saved;
+    } catch (e) {}
     var langs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
     for (var i = 0; i < langs.length; i++) if (/^zh\b/i.test(langs[i] || '')) return 'zh';
     return 'en';
@@ -421,12 +429,6 @@
 
   var lang = pickLang();
   var d = DICT[lang];
-  window.__u32I18n = d;
-  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
-  document.title = d.title;
-  document.querySelector('meta[name="description"]').content = d.desc;
-  document.querySelector('meta[property="og:title"]').content = d.title;
-  document.querySelector('meta[property="og:description"]').content = d.ogDesc;
 
   function apply() {
     var i, el, key, value;
@@ -447,8 +449,29 @@
     }
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply);
-  else apply();
+  function setLang(next) {
+    lang = next;
+    d = DICT[lang];
+    window.__u32I18n = d;
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    document.title = d.title;
+    document.querySelector('meta[name="description"]').content = d.desc;
+    document.querySelector('meta[property="og:title"]').content = d.title;
+    document.querySelector('meta[property="og:description"]').content = d.ogDesc;
+    apply();
+  }
+
+  function init() {
+    setLang(lang);
+    document.getElementById('lang-toggle').addEventListener('click', function () {
+      lang = lang === 'zh' ? 'en' : 'zh';
+      try { localStorage.setItem(STORAGE_KEY, lang); } catch (e) {}
+      setLang(lang);
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
 </script>
 </head>
@@ -463,6 +486,7 @@
       <a class="btn btn-primary" href="https://www.npmjs.com/package/u32-ai-email">npm: u32-ai-email</a>
       <a class="btn btn-ghost" href="https://github.com/u32-cn/u32-ai-email">GitHub</a>
       <a class="btn btn-ghost" href="/llms.txt" target="_blank" rel="noopener">llms.txt</a>
+      <button type="button" class="btn btn-ghost" id="lang-toggle" data-u32-name="lang-toggle" data-i18n="langToggle" data-i18n-aria="langToggleLabel" aria-label="切换到英文">English</button>
     </div>
     <div class="hero-meta">
       <span data-i18n="meta1">零安装，Node ≥ 18</span><span data-i18n="meta2">SMTP 发件</span><span data-i18n="meta3">IMAP 只读收件</span><span data-i18n="meta4">多账户配置</span><span data-i18n="meta5">30s 超时兜底</span>
@@ -606,7 +630,9 @@ $ npx u32-ai-email config test</pre>
     { btn: document.getElementById('ai-prompt-copy'), text: document.getElementById('ai-prompt-text') },
     { btn: document.getElementById('ai-prompt-copy-2'), text: document.getElementById('ai-prompt-text-2') }
   ];
-  var dict = window.__u32I18n || { copy: '一键复制', copied: '已复制' };
+  function dict() {
+    return window.__u32I18n || { copy: '一键复制', copied: '已复制' };
+  }
 
   function legacyCopy(value) {
     var ta = document.createElement('textarea');
@@ -625,9 +651,9 @@ $ npx u32-ai-email config test</pre>
     var resetTimer;
 
     function copied() {
-      btn.textContent = dict.copied;
+      btn.textContent = dict().copied;
       clearTimeout(resetTimer);
-      resetTimer = setTimeout(function () { btn.textContent = dict.copy; }, 1500);
+      resetTimer = setTimeout(function () { btn.textContent = dict().copy; }, 1500);
     }
 
     btn.addEventListener('click', function () {

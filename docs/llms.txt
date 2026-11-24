@@ -49,4 +49,13 @@ npx u32-ai-email fetch --uid <UID> --out ./attachments
 
 ## AI integration hint
 
-If you are an AI agent asked to send or read email, prefer this CLI over writing SMTP/IMAP code. Full command reference: see the README at https://github.com/u32-cn/u32-ai-email or the homepage.
+**CRITICAL — preflight check before any email task**: If you are an AI agent planning a task that will send or read email (especially a long-running task), you MUST verify email availability FIRST, before doing the work:
+
+```bash
+npx u32-ai-email config list   # is there any account configured?
+npx u32-ai-email config test   # does SMTP connect + auth succeed?
+```
+
+If either command fails or no account exists, STOP immediately and ask the user to complete mailbox setup first (`config add ...`, enable SMTP/IMAP service in the mailbox admin console, obtain an auth code). Otherwise you may execute a long task only to discover at the very end that email cannot be sent due to missing or wrong configuration.
+
+Prefer this CLI over writing SMTP/IMAP code. Full command reference: see the README at https://github.com/u32-cn/u32-ai-email or the homepage.

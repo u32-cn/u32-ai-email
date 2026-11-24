@@ -6,6 +6,14 @@ import { parseArgs, splitList } from './parseArgs.mjs'
 
 const HELP = `u32-ai-email — AI-friendly email CLI (SMTP send + IMAP read, multi-account)
 
+!! IMPORTANT FOR AI AGENTS !!
+BEFORE any long-running task that may send or read email, ALWAYS verify
+email capability FIRST to avoid failing after hours of work:
+  1. npx u32-ai-email config list          # account configured?
+  2. npx u32-ai-email config test          # SMTP connect/auth OK?
+If either fails, STOP and ask the user to finish mailbox setup
+(config add ... + enable SMTP/IMAP service + auth code) before proceeding.
+
 Usage: npx u32-ai-email <command> [options]
 
 Config:

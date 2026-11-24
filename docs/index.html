@@ -108,6 +108,16 @@ npx u32-ai-email read --uid 1234</code></pre>
   </div>
 </section>
 
+<section class="wrap">
+  <h2>⚠️ AI Agent 前置检查（必做）</h2>
+  <div class="card">
+    <p>在执行任何会收发邮件的任务（尤其是长任务）<strong>之前</strong>，务必先验证邮箱可用性，避免长任务跑完才发现没配置或配置错误导致邮件发不出：</p>
+<pre><code>npx u32-ai-email config list   # 是否已有账户配置？
+npx u32-ai-email config test   # SMTP 连接认证是否成功？</code></pre>
+    <p style="margin-top:12px">任一步失败 → <strong>立即停止任务</strong>，先让用户完成邮箱配置（<code>config add ...</code> + 邮箱后台开启 SMTP/IMAP 服务并获取授权码），再继续执行。</p>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
     u32-ai-email · MIT License ·

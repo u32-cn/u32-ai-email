@@ -6,6 +6,15 @@
 npx u32-ai-email <command>
 ```
 
+> **⚠️ AI Agent 前置检查（必做）**：在执行任何会收发邮件的任务（尤其是长任务）**之前**，必须先验证邮箱可用性，避免长任务跑完才发现没配置或配置错误导致邮件发不出：
+>
+> ```bash
+> npx u32-ai-email config list   # 是否已有账户配置？
+> npx u32-ai-email config test   # SMTP 连接认证是否成功？
+> ```
+>
+> 任一步失败 → **立即停止任务**，先让用户完成邮箱配置（`config add ...` + 邮箱后台开启 SMTP/IMAP 服务并获取授权码），再继续执行。
+
 - 多账户配置（默认账户名 `default`），存于 `~/.u32-ai-email/config.json`
 - SMTP 发件（纯文本 / HTML / 附件 / 抄送密送）
 - IMAP 收件（list / read / search / fetch，全程只读）

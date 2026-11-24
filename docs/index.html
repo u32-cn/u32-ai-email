@@ -6,124 +6,240 @@
 <title>u32-ai-email — 给 AI 用的邮件收发 CLI</title>
 <meta name="description" content="AI-friendly email CLI：npx u32-ai-email 直接发邮件（SMTP）、收邮件（IMAP），多账户支持，JSON 输出，专为 AI Agent 设计。">
 <style>
-  :root { --fg:#1a1a2e; --muted:#5a5a72; --accent:#0f6f5c; --accent2:#0d4f8b; --bg:#f7f8fa; --card:#ffffff; --border:#e4e6eb; --code-bg:#f0f2f5; }
+  :root {
+    --ink:#0f172a; --muted:#64748b; --bg:#ffffff;
+    --green:#0d9488; --green-dark:#0f766e; --green-bg:#f0fdfa;
+    --blue:#2563eb; --blue-bg:#eff6ff;
+    --amber:#b45309; --amber-bg:#fffbeb;
+    --surface:#f8fafc; --border:#e2e8f0;
+    --code-bg:#0f172a; --code-fg:#e2e8f0;
+    --radius:14px;
+  }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; color:var(--fg); background:var(--bg); line-height:1.6; }
-  .wrap { max-width:880px; margin:0 auto; padding:0 24px; }
-  header { padding:64px 0 40px; text-align:center; }
-  h1 { font-size:2.4rem; letter-spacing:-0.02em; }
-  h1 code { background:none; color:var(--accent); }
-  .tagline { font-size:1.15rem; color:var(--muted); margin-top:12px; }
-  .badges { margin-top:20px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
-  .badge { font-size:.85rem; padding:4px 12px; border:1px solid var(--border); border-radius:999px; background:var(--card); color:var(--muted); text-decoration:none; }
-  .badge:hover { border-color:var(--accent); color:var(--accent); }
-  section { padding:32px 0; }
-  h2 { font-size:1.4rem; margin-bottom:16px; }
-  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:24px; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; }
+  html { scroll-behavior:smooth; }
+  body { font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; color:var(--ink); background:var(--bg); line-height:1.7; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:920px; margin:0 auto; padding:0 28px; }
+  code, pre { font-family:"JetBrains Mono",Consolas,monospace; }
+
+  /* ---------- hero ---------- */
+  .hero {
+    background:linear-gradient(160deg,#042f2e 0%,#134e4a 45%,#0f3a5f 100%);
+    color:#fff; padding:88px 0 96px; position:relative; overflow:hidden;
+  }
+  .hero::before {
+    content:""; position:absolute; inset:0;
+    background:
+      radial-gradient(600px 300px at 85% 10%, rgba(13,148,136,.35), transparent 60%),
+      radial-gradient(500px 260px at 10% 90%, rgba(37,99,235,.28), transparent 60%);
+    pointer-events:none;
+  }
+  .hero .wrap { position:relative; }
+  .prompt-pill {
+    display:inline-flex; align-items:center; gap:10px;
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18);
+    border-radius:999px; padding:7px 18px; font-size:.85rem; color:#99f6e4;
+    letter-spacing:.04em; margin-bottom:28px;
+  }
+  .prompt-pill .dot { width:8px; height:8px; border-radius:50%; background:#2dd4bf; box-shadow:0 0 10px #2dd4bf; }
+  h1 { font-size:3.2rem; font-weight:800; letter-spacing:-.03em; line-height:1.15; }
+  h1 .accent { color:#5eead4; }
+  .tagline { font-size:1.25rem; color:#cbdeea; margin-top:18px; max-width:620px; }
+  .hero-cta { margin-top:36px; display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+  .btn {
+    display:inline-block; padding:11px 24px; border-radius:10px; font-size:.95rem;
+    font-weight:600; text-decoration:none; transition:transform .15s, box-shadow .15s;
+  }
+  .btn-primary { background:#14b8a6; color:#022c22; box-shadow:0 6px 20px rgba(20,184,166,.35); }
+  .btn-primary:hover { transform:translateY(-2px); }
+  .btn-ghost { background:rgba(255,255,255,.1); color:#e2e8f0; border:1px solid rgba(255,255,255,.25); }
+  .btn-ghost:hover { background:rgba(255,255,255,.18); }
+  .hero-meta { margin-top:26px; font-size:.85rem; color:#8fb3c7; display:flex; gap:22px; flex-wrap:wrap; }
+  .hero-meta span::before { content:"✓ "; color:#5eead4; }
+
+  /* ---------- demo window in hero ---------- */
+  .terminal {
+    margin-top:52px; background:var(--code-bg); border-radius:var(--radius);
+    box-shadow:0 24px 60px rgba(2,20,18,.5); overflow:hidden;
+    border:1px solid rgba(255,255,255,.08);
+  }
+  .terminal-bar { display:flex; align-items:center; gap:8px; padding:13px 18px; background:rgba(255,255,255,.05); }
+  .terminal-bar i { width:12px; height:12px; border-radius:50%; display:block; }
+  .terminal-bar i:nth-child(1){background:#f87171} .terminal-bar i:nth-child(2){background:#fbbf24} .terminal-bar i:nth-child(3){background:#34d399}
+  .terminal-bar .title { margin-left:10px; font-size:.78rem; color:#94a3b8; }
+  .terminal pre { padding:24px 26px; color:var(--code-fg); font-size:.88rem; line-height:1.8; overflow-x:auto; }
+  .terminal .cm { color:#64748b; }
+  .terminal .dollar { color:#5eead4; user-select:none; }
+  .terminal .hl { color:#7dd3fc; }
+
+  /* ---------- sections ---------- */
+  section { padding:64px 0 8px; }
+  .sec-tag {
+    display:inline-block; font-size:.75rem; font-weight:700; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--green); background:var(--green-bg);
+    border:1px solid #99f6e4; border-radius:999px; padding:4px 14px; margin-bottom:14px;
+  }
+  h2 { font-size:1.7rem; font-weight:750; letter-spacing:-.02em; margin-bottom:10px; }
+  .sec-desc { color:var(--muted); margin-bottom:30px; max-width:640px; }
+
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:18px; }
+  .feature {
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:26px 24px; transition:transform .15s, box-shadow .15s;
+  }
+  .feature:hover { transform:translateY(-3px); box-shadow:0 12px 28px rgba(15,23,42,.07); }
+  .f-icon {
+    width:42px; height:42px; border-radius:11px; display:flex; align-items:center; justify-content:center;
+    font-size:1.2rem; margin-bottom:16px;
+  }
+  .f-icon.t { background:var(--blue-bg); } .f-icon.g { background:var(--green-bg); }
+  .f-icon.a { background:var(--amber-bg); } .f-icon.p { background:#f5f3ff; }
   .feature h3 { font-size:1.05rem; margin-bottom:8px; }
-  .feature p { color:var(--muted); font-size:.95rem; }
-  pre { background:var(--code-bg); border-radius:8px; padding:16px; overflow-x:auto; font-size:.9rem; line-height:1.5; }
-  code { font-family:Consolas,"JetBrains Mono",monospace; }
-  p code, li code { background:var(--code-bg); padding:1px 6px; border-radius:4px; font-size:.88em; }
+  .feature p { color:var(--muted); font-size:.92rem; }
+  .feature code { background:#e2e8f080; padding:1px 6px; border-radius:5px; font-size:.84em; color:var(--ink); }
+
+  /* ---------- table card ---------- */
+  .table-card { border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
   table { border-collapse:collapse; width:100%; font-size:.92rem; }
-  th,td { border:1px solid var(--border); padding:8px 12px; text-align:left; }
-  th { background:var(--code-bg); }
-  footer { padding:40px 0; text-align:center; color:var(--muted); font-size:.85rem; border-top:1px solid var(--border); margin-top:32px; }
-  footer a { color:var(--accent); }
+  th { background:#f1f5f9; text-align:left; padding:13px 20px; font-size:.8rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); }
+  td { padding:13px 20px; border-bottom:1px solid var(--border); vertical-align:top; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:#f8fafc; }
+  td:first-child { white-space:nowrap; }
+  td code { background:var(--green-bg); color:var(--green-dark); padding:2px 8px; border-radius:6px; font-size:.85em; font-weight:600; }
+  td small { display:block; color:var(--muted); margin-top:2px; }
+
+  /* ---------- contract + preflight ---------- */
+  .duo { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:760px){ .duo { grid-template-columns:1fr; } }
+  .panel { border-radius:var(--radius); padding:28px 26px; border:1px solid var(--border); }
+  .panel h3 { font-size:1.05rem; margin-bottom:14px; display:flex; align-items:center; gap:9px; }
+  .panel ul { list-style:none; }
+  .panel li { padding:6px 0 6px 26px; position:relative; color:#334155; font-size:.93rem; }
+  .panel li::before { content:""; position:absolute; left:0; top:14px; width:16px; height:16px; border-radius:50%;
+    background:var(--green-bg) url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="%230d9488" d="M6.5 11 3.8 8.3l1-1L6.5 9l4.2-4.2 1 1z"/></svg>') center/contain no-repeat; }
+  .panel li code { background:#e2e8f080; padding:1px 6px; border-radius:5px; font-size:.85em; }
+  .panel li a { color:var(--green-dark); font-weight:600; }
+  .panel-warn { background:var(--amber-bg); border-color:#fde68a; }
+  .panel-warn h3 { color:var(--amber); }
+  .panel-warn p { font-size:.93rem; color:#78350f; margin-bottom:14px; }
+  .panel-warn pre { background:#451a03; color:#fef3c7; border-radius:10px; padding:16px 18px; font-size:.83rem; line-height:1.7; overflow-x:auto; }
+  .panel-warn .stop { margin-top:14px; font-size:.9rem; color:#78350f; }
+  .panel-warn .stop strong { color:#b91c1c; }
+  .panel-ok { background:var(--surface); }
+
+  /* ---------- footer ---------- */
+  footer { margin-top:80px; padding:36px 0; border-top:1px solid var(--border); }
+  footer .wrap { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; color:var(--muted); font-size:.85rem; }
+  footer a { color:var(--green-dark); text-decoration:none; font-weight:600; }
+  footer a:hover { text-decoration:underline; }
 </style>
 </head>
 <body>
-<header class="wrap">
-  <h1><code>npx u32-ai-email</code></h1>
-  <p class="tagline">给 AI 用的邮件收发命令行 —— 发邮件、收邮件、多账户，一行命令搞定</p>
-  <div class="badges">
-    <a class="badge" href="https://www.npmjs.com/package/u32-ai-email">npm: u32-ai-email</a>
-    <a class="badge" href="https://github.com/u32-cn/u32-ai-email">GitHub: u32-cn/u32-ai-email</a>
-    <a class="badge" href="/llms.txt" target="_blank" rel="noopener">llms</a>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="prompt-pill"><span class="dot"></span>DESIGNED FOR AI AGENTS</div>
+    <h1>给 AI 用的邮件收发 CLI<br><span class="accent">npx u32-ai-email</span></h1>
+    <p class="tagline">发邮件、收邮件、多账户，一行命令搞定。JSON 输出、零交互、语义化 exit code——AI 拿到结果直接解析。</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="https://www.npmjs.com/package/u32-ai-email">npm: u32-ai-email</a>
+      <a class="btn btn-ghost" href="https://github.com/u32-cn/u32-ai-email">GitHub</a>
+      <a class="btn btn-ghost" href="/llms.txt" target="_blank" rel="noopener">llms.txt</a>
+    </div>
+    <div class="hero-meta">
+      <span>零安装，Node ≥ 18</span><span>SMTP 发件</span><span>IMAP 只读收件</span><span>多账户配置</span><span>30s 超时兜底</span>
+    </div>
+
+    <div class="terminal">
+      <div class="terminal-bar"><i></i><i></i><i></i><span class="title">agent@work ~</span></div>
+      <pre><span class="cm"># 1. 添加账户（一次即可，存 ~/.u32-ai-email/config.json）</span>
+<span class="dollar">$</span> npx u32-ai-email config add default \
+    --host smtp.88.com --user you@88.com --pass 授权码
+
+<span class="cm"># 2. 发邮件</span>
+<span class="dollar">$</span> npx u32-ai-email send --to a@b.com --subject "周报" \
+    --html-file report.html --attach report.pdf
+
+<span class="cm"># 3. 收邮件（只读，不会动你的邮箱）</span>
+<span class="dollar">$</span> npx u32-ai-email <span class="hl">list</span> --limit 5
+<span class="dollar">$</span> npx u32-ai-email <span class="hl">read</span> --uid 1234</pre>
+    </div>
   </div>
-</header>
+</div>
 
 <section class="wrap">
-  <div class="card grid">
+  <span class="sec-tag">Features</span>
+  <h2>为什么适合 AI</h2>
+  <p class="sec-desc">每一处设计都为了让 Agent 少猜、少试、少返工。</p>
+  <div class="grid">
     <div class="feature">
-      <h3>🤖 为 AI 设计</h3>
-      <p>所有输出 JSON、exit code 语义化、零交互、30s 超时兜底——AI 拿到结果直接解析，不用猜。</p>
+      <div class="f-icon t">🤖</div>
+      <h3>为 AI 设计的输出</h3>
+      <p>所有命令输出 JSON、exit code 语义化（0 成功 / 1 用法错 / 2 失败），脚本直接解析，不用猜格式。</p>
     </div>
     <div class="feature">
-      <h3>📤 发 + 📥 收</h3>
-      <p>SMTP 发件（文本/HTML/附件/抄送密送），IMAP 收件（list / read / search / fetch，全程只读）。</p>
+      <div class="f-icon g">📤</div>
+      <h3>发 + 收 全覆盖</h3>
+      <p>SMTP 发件（文本 / HTML / 附件 / 抄送密送），IMAP 收件（list / read / search / fetch），收件全程只读。</p>
     </div>
     <div class="feature">
-      <h3>👥 多账户</h3>
+      <div class="f-icon a">👥</div>
+      <h3>多账户</h3>
       <p><code>config add work --host ...</code> 添加任意账户，<code>--account work</code> 一参切换，默认账户名 <code>default</code>。</p>
     </div>
     <div class="feature">
-      <h3>⚡ 零安装</h3>
-      <p>不需要装任何东西：<code>npx u32-ai-email help</code> 即用。Node ≥ 18。</p>
+      <div class="f-icon p">⚡</div>
+      <h3>零安装即用</h3>
+      <p>不需要装任何东西，<code>npx u32-ai-email help</code> 即用。连接与认证超时各 30 秒，不会挂死任务。</p>
     </div>
   </div>
 </section>
 
 <section class="wrap">
-  <h2>30 秒上手</h2>
-  <div class="card">
-<pre><code># 1. 添加账户（一次即可，存 ~/.u32-ai-email/config.json）
-npx u32-ai-email config add default \
-  --host smtp.88.com --user you@88.com --pass 授权码 --from-name "AI 助手"
-
-# 2. 发邮件
-npx u32-ai-email send --to a@b.com --subject "周报" --html-file report.html --attach report.pdf
-
-# 3. 收邮件（只读，不会动你的邮箱）
-npx u32-ai-email list --limit 5
-npx u32-ai-email read --uid 1234</code></pre>
-  </div>
-</section>
-
-<section class="wrap">
+  <span class="sec-tag">Commands</span>
   <h2>命令一览</h2>
-  <div class="card">
+  <p class="sec-desc">十个子命令，覆盖账户管理与收发全流程。</p>
+  <div class="table-card">
     <table>
       <tr><th>命令</th><th>作用</th></tr>
-      <tr><td><code>config add/list/remove/default/test</code></td><td>账户管理与 SMTP 连接验证</td></tr>
-      <tr><td><code>send --to --subject (--body|--html|--html-file)</code></td><td>发邮件（可选 --attach/--cc/--bcc/--account）</td></tr>
-      <tr><td><code>list [--limit N]</code></td><td>最近邮件（uid/日期/发件人/主题/未读）</td></tr>
-      <tr><td><code>read --uid N [--raw-html]</code></td><td>读单封正文 + 附件清单</td></tr>
-      <tr><td><code>search --from|--subject|--since|--before</code></td><td>搜索邮件（至少一个条件）</td></tr>
-      <tr><td><code>fetch --uid N [--out DIR]</code></td><td>下载附件</td></tr>
+      <tr><td><code>config add / list / remove / default / test</code></td><td>账户管理与 SMTP 连接验证<small>pass 打码展示，配置存 ~/.u32-ai-email/config.json</small></td></tr>
+      <tr><td><code>send</code></td><td>发邮件<small>--to --subject，正文三选一 --body / --html / --html-file，可选 --attach --cc --bcc --account</small></td></tr>
+      <tr><td><code>list</code></td><td>最近邮件<small>uid / 日期 / 发件人 / 主题 / 未读标记</small></td></tr>
+      <tr><td><code>read</code></td><td>读单封<small>--uid N，默认纯文本，--raw-html 输出 HTML 正文 + 附件清单</small></td></tr>
+      <tr><td><code>search</code></td><td>搜索邮件<small>--from / --subject / --since / --before 至少一项</small></td></tr>
+      <tr><td><code>fetch</code></td><td>下载附件<small>--uid N --out 目录</small></td></tr>
     </table>
   </div>
 </section>
 
 <section class="wrap">
-  <h2>AI 输出约定</h2>
-  <div class="card">
-    <ul>
-      <li>stdout 输出 JSON，stderr 输出错误 JSON</li>
-      <li>exit code：<code>0</code> 成功 / <code>1</code> 用法错误 / <code>2</code> 网络认证发送失败</li>
-      <li>连接与认证超时各 30 秒</li>
-      <li>如果你是 AI Agent：完整使用说明见 <a href="/llms.txt">llms.txt</a></li>
-    </ul>
-  </div>
-</section>
-
-<section class="wrap">
-  <h2>⚠️ AI Agent 前置检查（必做）</h2>
-  <div class="card">
-    <p>在执行任何会收发邮件的任务（尤其是长任务）<strong>之前</strong>，务必先验证邮箱可用性，避免长任务跑完才发现没配置或配置错误导致邮件发不出：</p>
-<pre><code>npx u32-ai-email config list   # 是否已有账户配置？
-npx u32-ai-email config test   # SMTP 连接认证是否成功？</code></pre>
-    <p style="margin-top:12px">任一步失败 → <strong>立即停止任务</strong>，先让用户完成邮箱配置（<code>config add ...</code> + 邮箱后台开启 SMTP/IMAP 服务并获取授权码），再继续执行。</p>
+  <span class="sec-tag">For Agents</span>
+  <h2>AI 集成约定</h2>
+  <p class="sec-desc">如果你是 AI Agent，请按这两块执行。</p>
+  <div class="duo">
+    <div class="panel panel-ok">
+      <h3>📐 输出约定</h3>
+      <ul>
+        <li>stdout 输出 JSON，stderr 输出错误 JSON</li>
+        <li>exit code：<code>0</code> 成功 / <code>1</code> 用法错误 / <code>2</code> 网络认证发送失败</li>
+        <li>连接与认证超时各 30 秒</li>
+        <li>完整说明见 <a href="/llms.txt">llms.txt</a></li>
+      </ul>
+    </div>
+    <div class="panel panel-warn">
+      <h3>⚠️ 发邮件前的前置检查（必做）</h3>
+      <p>执行任何会收发邮件的任务（尤其长任务）之前，务必先验证邮箱可用：</p>
+      <pre>$ npx u32-ai-email config list   # 已有账户？
+$ npx u32-ai-email config test   # SMTP 认证通过？</pre>
+      <p class="stop"><strong>任一步失败 → 立即停止任务</strong>，先让用户完成邮箱配置（config add + 邮箱后台开启 SMTP/IMAP 并获取授权码），避免长任务跑完才发现邮件发不出。</p>
+    </div>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
-    u32-ai-email · MIT License ·
-    <a href="https://github.com/u32-cn/u32-ai-email">GitHub</a> ·
-    <a href="https://www.npmjs.com/package/u32-ai-email">npm</a> ·
-    <a href="/llms.txt" target="_blank" rel="noopener">llms.txt</a>
+    <div>u32-ai-email · MIT License</div>
+    <div><a href="https://github.com/u32-cn/u32-ai-email">GitHub</a> · <a href="https://www.npmjs.com/package/u32-ai-email">npm</a> · <a href="/llms.txt" target="_blank" rel="noopener">llms.txt</a></div>
   </div>
 </footer>
 

@@ -1,0 +1,38 @@
+{
+  "name": "u32-ai-email",
+  "version": "1.0.0",
+  "description": "AI-friendly email CLI: send via SMTP, read via IMAP, multi-account config. Designed for AI agents (npx u32-ai-email).",
+  "type": "module",
+  "bin": {
+    "u32-ai-email": "bin/cli.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "email",
+    "smtp",
+    "imap",
+    "ai",
+    "agent",
+    "cli",
+    "nodemailer"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/u32-cn/u32-ai-email.git"
+  },
+  "homepage": "https://u32-ai-email.u32.cn",
+  "dependencies": {
+    "nodemailer": "^7.0.10",
+    "imap": "^0.8.19",
+    "mailparser": "^3.8.0"
+  }
+}

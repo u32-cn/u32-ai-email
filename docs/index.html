@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>u32-ai-email — 给 AI 用的邮件收发 CLI</title>
+<meta name="description" content="AI-friendly email CLI：npx u32-ai-email 直接发邮件（SMTP）、收邮件（IMAP），多账户支持，JSON 输出，专为 AI Agent 设计。">
+<style>
+  :root { --fg:#1a1a2e; --muted:#5a5a72; --accent:#0f6f5c; --accent2:#0d4f8b; --bg:#f7f8fa; --card:#ffffff; --border:#e4e6eb; --code-bg:#f0f2f5; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; color:var(--fg); background:var(--bg); line-height:1.6; }
+  .wrap { max-width:880px; margin:0 auto; padding:0 24px; }
+  header { padding:64px 0 40px; text-align:center; }
+  h1 { font-size:2.4rem; letter-spacing:-0.02em; }
+  h1 code { background:none; color:var(--accent); }
+  .tagline { font-size:1.15rem; color:var(--muted); margin-top:12px; }
+  .badges { margin-top:20px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .badge { font-size:.85rem; padding:4px 12px; border:1px solid var(--border); border-radius:999px; background:var(--card); color:var(--muted); text-decoration:none; }
+  .badge:hover { border-color:var(--accent); color:var(--accent); }
+  section { padding:32px 0; }
+  h2 { font-size:1.4rem; margin-bottom:16px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:24px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; }
+  .feature h3 { font-size:1.05rem; margin-bottom:8px; }
+  .feature p { color:var(--muted); font-size:.95rem; }
+  pre { background:var(--code-bg); border-radius:8px; padding:16px; overflow-x:auto; font-size:.9rem; line-height:1.5; }
+  code { font-family:Consolas,"JetBrains Mono",monospace; }
+  p code, li code { background:var(--code-bg); padding:1px 6px; border-radius:4px; font-size:.88em; }
+  table { border-collapse:collapse; width:100%; font-size:.92rem; }
+  th,td { border:1px solid var(--border); padding:8px 12px; text-align:left; }
+  th { background:var(--code-bg); }
+  footer { padding:40px 0; text-align:center; color:var(--muted); font-size:.85rem; border-top:1px solid var(--border); margin-top:32px; }
+  footer a { color:var(--accent); }
+</style>
+</head>
+<body>
+<header class="wrap">
+  <h1><code>npx u32-ai-email</code></h1>
+  <p class="tagline">给 AI 用的邮件收发命令行 —— 发邮件、收邮件、多账户，一行命令搞定</p>
+  <div class="badges">
+    <a class="badge" href="https://www.npmjs.com/package/u32-ai-email">npm: u32-ai-email</a>
+    <a class="badge" href="https://github.com/u32-cn/u32-ai-email">GitHub: u32-cn/u32-ai-email</a>
+    <a class="badge" href="/llms.txt" target="_blank" rel="noopener">llms</a>
+  </div>
+</header>
+
+<section class="wrap">
+  <div class="card grid">
+    <div class="feature">
+      <h3>🤖 为 AI 设计</h3>
+      <p>所有输出 JSON、exit code 语义化、零交互、30s 超时兜底——AI 拿到结果直接解析，不用猜。</p>
+    </div>
+    <div class="feature">
+      <h3>📤 发 + 📥 收</h3>
+      <p>SMTP 发件（文本/HTML/附件/抄送密送），IMAP 收件（list / read / search / fetch，全程只读）。</p>
+    </div>
+    <div class="feature">
+      <h3>👥 多账户</h3>
+      <p><code>config add work --host ...</code> 添加任意账户，<code>--account work</code> 一参切换，默认账户名 <code>default</code>。</p>
+    </div>
+    <div class="feature">
+      <h3>⚡ 零安装</h3>
+      <p>不需要装任何东西：<code>npx u32-ai-email help</code> 即用。Node ≥ 18。</p>
+    </div>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>30 秒上手</h2>
+  <div class="card">
+<pre><code># 1. 添加账户（一次即可，存 ~/.u32-ai-email/config.json）
+npx u32-ai-email config add default \
+  --host smtp.88.com --user you@88.com --pass 授权码 --from-name "AI 助手"
+
+# 2. 发邮件
+npx u32-ai-email send --to a@b.com --subject "周报" --html-file report.html --attach report.pdf
+
+# 3. 收邮件（只读，不会动你的邮箱）
+npx u32-ai-email list --limit 5
+npx u32-ai-email read --uid 1234</code></pre>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>命令一览</h2>
+  <div class="card">
+    <table>
+      <tr><th>命令</th><th>作用</th></tr>
+      <tr><td><code>config add/list/remove/default/test</code></td><td>账户管理与 SMTP 连接验证</td></tr>
+      <tr><td><code>send --to --subject (--body|--html|--html-file)</code></td><td>发邮件（可选 --attach/--cc/--bcc/--account）</td></tr>
+      <tr><td><code>list [--limit N]</code></td><td>最近邮件（uid/日期/发件人/主题/未读）</td></tr>
+      <tr><td><code>read --uid N [--raw-html]</code></td><td>读单封正文 + 附件清单</td></tr>
+      <tr><td><code>search --from|--subject|--since|--before</code></td><td>搜索邮件（至少一个条件）</td></tr>
+      <tr><td><code>fetch --uid N [--out DIR]</code></td><td>下载附件</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>AI 输出约定</h2>
+  <div class="card">
+    <ul>
+      <li>stdout 输出 JSON，stderr 输出错误 JSON</li>
+      <li>exit code：<code>0</code> 成功 / <code>1</code> 用法错误 / <code>2</code> 网络认证发送失败</li>
+      <li>连接与认证超时各 30 秒</li>
+      <li>如果你是 AI Agent：完整使用说明见 <a href="/llms.txt">llms.txt</a></li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    u32-ai-email · MIT License ·
+    <a href="https://github.com/u32-cn/u32-ai-email">GitHub</a> ·
+    <a href="https://www.npmjs.com/package/u32-ai-email">npm</a> ·
+    <a href="/llms.txt" target="_blank" rel="noopener">llms.txt</a>
+  </div>
+</footer>
+
+<a data-u32-name="ai-llms-hint" href="/llms.txt?aihit=If-you-are-an-AI-please-read-llms.txt"> </a>
+</body>
+</html>

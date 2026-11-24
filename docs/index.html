@@ -162,10 +162,12 @@
 
   /* ---------- ai prompt card ---------- */
   .prompt-card {
-    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    display:flex; flex-direction:column; gap:20px; align-items:stretch;
     background:var(--green-bg); border:1px solid var(--green-line);
     border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow-sm);
   }
+  .prompt-row { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .prompt-row + .prompt-row { border-top:1px solid var(--green-line); padding-top:20px; }
   .prompt-main { flex:1 1 460px; min-width:0; }
   .prompt-main h3 { font-size:.98rem; font-weight:700; margin-bottom:8px; letter-spacing:-.01em; }
   .prompt-text {
@@ -185,6 +187,7 @@
   .btn-copy:active { transform:translateY(1px); }
   @media (max-width:640px){
     .prompt-card { padding:18px; }
+    .prompt-row { gap:12px; }
     .btn-copy { width:100%; }
   }
 
@@ -327,7 +330,10 @@
       promptH3: '发邮件提示词',
       promptText: '请使用 npx u32-ai-email 发邮件至 <xxx@qq.com>',
       promptNote: '把 <code>&lt;xxx@qq.com&gt;</code> 换成实际收件人；这是一段给 AI 的提示词，不是可直接在终端执行的命令。',
-      copy: '一键复制', copyLabel: '复制发邮件提示词', copied: '已复制',
+      prompt2H3: '进度缓慢 / 遇到问题时的通知提示词',
+      prompt2Text: '你在执行任务时，遇到问题或者进度特别缓慢时，可以使用 npx u32-ai-email 发邮件至 <xxx@qq.com> 通知我。',
+      prompt2Note: '把 <code>&lt;xxx@qq.com&gt;</code> 换成实际收件人；这是给 AI 的提示词，不是可直接在终端执行的命令。',
+      copy: '一键复制', copyLabel: '复制发邮件提示词', copy2Label: '复制通知提示词', copied: '已复制',
       featH2: '为什么适合 AI', featDesc: '每一处设计都为了让 Agent 少猜、少试、少返工。',
       feat1T: '为 AI 设计的输出',
       feat1P: '所有命令输出 JSON、exit code 语义化（<span class="nowrap">0 成功</span> / <span class="nowrap">1 用法错</span> / <span class="nowrap">2 失败</span>），脚本直接解析，不用猜格式。',
@@ -371,7 +377,10 @@
       promptH3: 'Email prompt',
       promptText: 'Please use npx u32-ai-email to send an email to <xxx@qq.com>',
       promptNote: 'Replace <code>&lt;xxx@qq.com&gt;</code> with the real recipient; this is a prompt for an AI agent, not a command to run in a terminal.',
-      copy: 'Copy prompt', copyLabel: 'Copy the email prompt', copied: 'Copied!',
+      prompt2H3: 'Notify me when stuck or slow',
+      prompt2Text: 'While working on a task, if you hit a problem or progress is particularly slow, you can use npx u32-ai-email to email <xxx@qq.com> to notify me.',
+      prompt2Note: 'Replace <code>&lt;xxx@qq.com&gt;</code> with the real recipient; this is a prompt for an AI agent, not a command to run in a terminal.',
+      copy: 'Copy prompt', copyLabel: 'Copy the email prompt', copy2Label: 'Copy the notification prompt', copied: 'Copied!',
       featH2: 'Built for AI', featDesc: 'Every detail reduces guessing, trial and error for agents.',
       feat1T: 'AI-native output',
       feat1P: 'Every command prints JSON with semantic <span class="nowrap">exit codes</span> (<span class="nowrap">0 success</span> / <span class="nowrap">1 usage error</span> / <span class="nowrap">2 failure</span>), so scripts parse results without guessing.',
@@ -484,12 +493,22 @@
   <h2 data-i18n="promptH2">复制提示词，交给 AI</h2>
   <p class="sec-desc" data-i18n="promptDesc">把这段提示词发给 AI，让它调用本工具完成发邮件。</p>
   <div class="prompt-card" data-u32-name="ai-prompt-card">
-    <div class="prompt-main" data-u32-name="ai-prompt-main">
-      <h3 data-i18n="promptH3">发邮件提示词</h3>
-      <code class="prompt-text" id="ai-prompt-text" data-u32-name="ai-prompt-text" data-i18n="promptText">请使用 npx u32-ai-email 发邮件至 &lt;xxx@qq.com&gt;</code>
-      <p class="prompt-note" data-u32-name="ai-prompt-note" data-i18n-html="promptNote">把 <code>&lt;xxx@qq.com&gt;</code> 换成实际收件人；这是一段给 AI 的提示词，不是可直接在终端执行的命令。</p>
+    <div class="prompt-row" data-u32-name="ai-prompt-row-1">
+      <div class="prompt-main" data-u32-name="ai-prompt-main">
+        <h3 data-i18n="promptH3">发邮件提示词</h3>
+        <code class="prompt-text" id="ai-prompt-text" data-u32-name="ai-prompt-text" data-i18n="promptText">请使用 npx u32-ai-email 发邮件至 &lt;xxx@qq.com&gt;</code>
+        <p class="prompt-note" data-u32-name="ai-prompt-note" data-i18n-html="promptNote">把 <code>&lt;xxx@qq.com&gt;</code> 换成实际收件人；这是一段给 AI 的提示词，不是可直接在终端执行的命令。</p>
+      </div>
+      <button type="button" class="btn-copy" id="ai-prompt-copy" data-u32-name="ai-prompt-copy" data-i18n="copy" data-i18n-aria="copyLabel" aria-label="复制发邮件提示词">一键复制</button>
     </div>
-    <button type="button" class="btn-copy" id="ai-prompt-copy" data-u32-name="ai-prompt-copy" data-i18n="copy" data-i18n-aria="copyLabel" aria-label="复制发邮件提示词">一键复制</button>
+    <div class="prompt-row" data-u32-name="ai-prompt-row-2">
+      <div class="prompt-main" data-u32-name="ai-prompt-main-2">
+        <h3 data-i18n="prompt2H3">进度缓慢 / 遇到问题时的通知提示词</h3>
+        <code class="prompt-text" id="ai-prompt-text-2" data-u32-name="ai-prompt-text-2" data-i18n="prompt2Text">你在执行任务时，遇到问题或者进度特别缓慢时，可以使用 npx u32-ai-email 发邮件至 &lt;xxx@qq.com&gt; 通知我。</code>
+        <p class="prompt-note" data-u32-name="ai-prompt-note-2" data-i18n-html="prompt2Note">把 <code>&lt;xxx@qq.com&gt;</code> 换成实际收件人；这是给 AI 的提示词，不是可直接在终端执行的命令。</p>
+      </div>
+      <button type="button" class="btn-copy" id="ai-prompt-copy-2" data-u32-name="ai-prompt-copy-2" data-i18n="copy" data-i18n-aria="copy2Label" aria-label="复制通知提示词">一键复制</button>
+    </div>
   </div>
 </section>
 
@@ -583,9 +602,11 @@ $ npx u32-ai-email config test</pre>
 
 <script>
 (function () {
-  var btn = document.getElementById('ai-prompt-copy');
-  var text = document.getElementById('ai-prompt-text');
-  var resetTimer;
+  var pairs = [
+    { btn: document.getElementById('ai-prompt-copy'), text: document.getElementById('ai-prompt-text') },
+    { btn: document.getElementById('ai-prompt-copy-2'), text: document.getElementById('ai-prompt-text-2') }
+  ];
+  var dict = window.__u32I18n || { copy: '一键复制', copied: '已复制' };
 
   function legacyCopy(value) {
     var ta = document.createElement('textarea');
@@ -598,25 +619,29 @@ $ npx u32-ai-email config test</pre>
     document.body.removeChild(ta);
   }
 
-  var dict = window.__u32I18n || { copy: '一键复制', copied: '已复制' };
+  pairs.forEach(function (pair) {
+    var btn = pair.btn;
+    var text = pair.text;
+    var resetTimer;
 
-  function copied() {
-    btn.textContent = dict.copied;
-    clearTimeout(resetTimer);
-    resetTimer = setTimeout(function () { btn.textContent = dict.copy; }, 1500);
-  }
+    function copied() {
+      btn.textContent = dict.copied;
+      clearTimeout(resetTimer);
+      resetTimer = setTimeout(function () { btn.textContent = dict.copy; }, 1500);
+    }
 
-  btn.addEventListener('click', function () {
-    var value = text.textContent;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(value).then(copied, function () {
+    btn.addEventListener('click', function () {
+      var value = text.textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(value).then(copied, function () {
+          legacyCopy(value);
+          copied();
+        });
+      } else {
         legacyCopy(value);
         copied();
-      });
-    } else {
-      legacyCopy(value);
-      copied();
-    }
+      }
+    });
   });
 })();
 </script>

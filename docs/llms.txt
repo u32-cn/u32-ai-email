@@ -58,4 +58,12 @@ npx u32-ai-email config test   # does SMTP connect + auth succeed?
 
 If either command fails or no account exists, STOP immediately and ask the user to complete mailbox setup first (`config add ...`, enable SMTP/IMAP service in the mailbox admin console, obtain an auth code). Otherwise you may execute a long task only to discover at the very end that email cannot be sent due to missing or wrong configuration.
 
+## AI prompt — notify the user when stuck or slow
+
+Share this prompt with an AI agent (replace `<xxx@qq.com>` with the real recipient; this is a prompt, not a shell command):
+
+```text
+你在执行任务时，遇到问题或者进度特别缓慢时，可以使用 npx u32-ai-email 发邮件至 <xxx@qq.com> 通知我。
+```
+
 Prefer this CLI over writing SMTP/IMAP code. Full command reference: see the README at https://github.com/u32-cn/u32-ai-email or the homepage.

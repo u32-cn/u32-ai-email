@@ -14,6 +14,10 @@ email capability FIRST to avoid failing after hours of work:
 If either fails, STOP and ask the user to finish mailbox setup
 (config add ... + enable SMTP/IMAP service + auth code) before proceeding.
 
+AI PROMPT — notify the user when stuck or slow (share this prompt with an AI agent;
+replace <xxx@qq.com> with the real recipient. This is a prompt, not a shell command):
+  你在执行任务时，遇到问题或者进度特别缓慢时，可以使用 npx u32-ai-email 发邮件至 <xxx@qq.com> 通知我。
+
 Usage: npx u32-ai-email <command> [options]
 
 Config:

@@ -309,36 +309,169 @@
     *, *::before, *::after { transition:none !important; animation:none !important; }
   }
 </style>
+<script>
+(function () {
+  var DICT = {
+    zh: {
+      title: 'u32-ai-email — 给 AI 用的邮件收发 CLI',
+      desc: 'AI-friendly email CLI：npx u32-ai-email 直接发邮件（SMTP）、收邮件（IMAP），多账户支持，JSON 输出，专为 AI Agent 设计。',
+      ogDesc: '发邮件、收邮件、多账户，一行命令搞定。JSON 输出、零交互、语义化 exit code。',
+      heroTitle: '给 AI 用的邮件收发 CLI<br><span class="accent">npx u32-ai-email</span>',
+      tagline: '发邮件、收邮件、多账户，一行命令搞定。JSON 输出、零交互、语义化 <span class="nowrap">exit code</span> —— AI 拿到结果直接解析。',
+      meta1: '零安装，Node ≥ 18', meta2: 'SMTP 发件', meta3: 'IMAP 只读收件', meta4: '多账户配置', meta5: '30s 超时兜底',
+      termAddAccount: '# 1. 添加账户（存 ~/.u32-ai-email/config.json）',
+      termAuthCode: '授权码', termSend: '# 2. 发邮件', termWeekly: '周报',
+      termRead: '# 3. 收邮件（只读，不会动你的邮箱）',
+      promptH2: '复制提示词，交给 AI',
+      promptDesc: '把这段提示词发给 AI，让它调用本工具完成发邮件。',
+      promptH3: '发邮件提示词',
+      promptText: '请使用 npx u32-ai-email 发邮件至 <xxx@qq.com>',
+      promptNote: '把 <code>&lt;xxx@qq.com&gt;</code> 换成实际收件人；这是一段给 AI 的提示词，不是可直接在终端执行的命令。',
+      copy: '一键复制', copyLabel: '复制发邮件提示词', copied: '已复制',
+      featH2: '为什么适合 AI', featDesc: '每一处设计都为了让 Agent 少猜、少试、少返工。',
+      feat1T: '为 AI 设计的输出',
+      feat1P: '所有命令输出 JSON、exit code 语义化（<span class="nowrap">0 成功</span> / <span class="nowrap">1 用法错</span> / <span class="nowrap">2 失败</span>），脚本直接解析，不用猜格式。',
+      feat2T: '发 + 收 全覆盖',
+      feat2P: 'SMTP 发件（文本 / HTML / 附件 / 抄送密送），IMAP 收件（<span class="nowrap">list / read / search / fetch</span>），收件全程只读。',
+      feat3T: '多账户',
+      feat3P: '<code>config add work</code> 添加任意账户，<code>--account work</code> 一参切换，默认账户名 <code>default</code>。',
+      feat4T: '零安装即用',
+      feat4P: '零依赖，<code>npx u32-ai-email help</code> 直接用。连接与认证超时各 30 秒，不会挂死任务。',
+      cmdH2: '命令一览', cmdDesc: '十个子命令，覆盖账户管理与收发全流程。',
+      thCmd: '命令', thUse: '作用',
+      cmd1: '账户管理与 SMTP 连接验证', cmd1s: 'pass 打码展示，配置存 ~/.u32-ai-email/config.json',
+      cmd2: '发邮件', cmd2s: '--to --subject，正文三选一 --body / --html / --html-file，可选 --attach --cc --bcc --account',
+      cmd3: '最近邮件', cmd3s: 'uid / 日期 / 发件人 / 主题 / 未读标记',
+      cmd4: '读单封', cmd4s: '--uid N，默认纯文本，--raw-html 输出 HTML 正文 + 附件清单',
+      cmd5: '搜索邮件', cmd5s: '--from / --subject / --since / --before 至少一项',
+      cmd6: '下载附件', cmd6s: '--uid N --out 目录',
+      agentH2: 'AI 集成约定', agentDesc: '如果你是 AI Agent，请按这两块执行。',
+      outTitle: '输出约定',
+      out1: 'stdout 输出 JSON，stderr 输出错误 JSON',
+      out2: 'exit code：<code>0</code> 成功 / <code>1</code> 用法错误 / <code>2</code> 网络认证发送失败',
+      out3: '连接与认证超时各 30 秒',
+      out4: '完整说明见 <a href="/llms.txt">llms.txt</a>',
+      preTitle: '发邮件前的前置检查（必做）',
+      preDesc: '执行任何会收发邮件的任务（尤其长任务）之前，务必先验证邮箱可用：',
+      preC1: '# 有没有已配置的账户？', preC2: '# SMTP 能连上并通过认证？',
+      preStop: '<strong>任一步失败 → 立即停止任务</strong>，先让用户完成邮箱配置（config add + 邮箱后台开启 SMTP/IMAP 并获取授权码），避免长任务跑完才发现邮件发不出。'
+    },
+    en: {
+      title: 'u32-ai-email — Email CLI for AI Agents',
+      desc: 'AI-friendly email CLI: send (SMTP) and read (IMAP) email with npx u32-ai-email. Multi-account, JSON output, built for AI agents.',
+      ogDesc: 'Send and read email, multi-account, one command. JSON output, zero interaction, semantic exit codes.',
+      heroTitle: 'Email CLI for AI Agents<br><span class="accent">npx u32-ai-email</span>',
+      tagline: 'Send, read, and manage multiple accounts in one command. JSON output, zero interaction, semantic <span class="nowrap">exit codes</span> — AI parses every result directly.',
+      meta1: 'Zero install, Node >= 18', meta2: 'SMTP send', meta3: 'IMAP read-only', meta4: 'Multi-account', meta5: '30s timeouts',
+      termAddAccount: '# 1. Add an account (stored in ~/.u32-ai-email/config.json)',
+      termAuthCode: 'AUTH_CODE', termSend: '# 2. Send an email', termWeekly: 'Weekly report',
+      termRead: '# 3. Read email (read-only, never touches your mailbox)',
+      promptH2: 'Copy the prompt, hand it to AI',
+      promptDesc: 'Send this prompt to an AI agent so it can send email with this tool.',
+      promptH3: 'Email prompt',
+      promptText: 'Please use npx u32-ai-email to send an email to <xxx@qq.com>',
+      promptNote: 'Replace <code>&lt;xxx@qq.com&gt;</code> with the real recipient; this is a prompt for an AI agent, not a command to run in a terminal.',
+      copy: 'Copy prompt', copyLabel: 'Copy the email prompt', copied: 'Copied!',
+      featH2: 'Built for AI', featDesc: 'Every detail reduces guessing, trial and error for agents.',
+      feat1T: 'AI-native output',
+      feat1P: 'Every command prints JSON with semantic <span class="nowrap">exit codes</span> (<span class="nowrap">0 success</span> / <span class="nowrap">1 usage error</span> / <span class="nowrap">2 failure</span>), so scripts parse results without guessing.',
+      feat2T: 'Send and receive',
+      feat2P: 'SMTP send (text / HTML / attachments / CC / BCC), IMAP read (<span class="nowrap">list / read / search / fetch</span>), all read-only.',
+      feat3T: 'Multiple accounts',
+      feat3P: '<code>config add work</code> adds any account, <code>--account work</code> switches in one flag, default account is <code>default</code>.',
+      feat4T: 'Zero install',
+      feat4P: 'Zero dependencies — just <code>npx u32-ai-email help</code>. Connect and auth time out after 30s each, so tasks never hang.',
+      cmdH2: 'Command reference', cmdDesc: 'Ten subcommands covering accounts, sending and reading.',
+      thCmd: 'Command', thUse: 'Purpose',
+      cmd1: 'Manage accounts and verify SMTP', cmd1s: 'Passwords are masked; config stored in ~/.u32-ai-email/config.json',
+      cmd2: 'Send email', cmd2s: '--to --subject, body from --body / --html / --html-file, optional --attach --cc --bcc --account',
+      cmd3: 'Recent messages', cmd3s: 'uid / date / from / subject / unread flag',
+      cmd4: 'Read one message', cmd4s: '--uid N, plain text by default, --raw-html outputs HTML body + attachment list',
+      cmd5: 'Search messages', cmd5s: 'At least one of --from / --subject / --since / --before',
+      cmd6: 'Download attachments', cmd6s: '--uid N --out DIRECTORY',
+      agentH2: 'AI integration contract', agentDesc: 'If you are an AI agent, follow these two rules.',
+      outTitle: 'Output contract',
+      out1: 'stdout is JSON, stderr is error JSON',
+      out2: 'exit codes: <code>0</code> success / <code>1</code> usage error / <code>2</code> network, auth or send failure',
+      out3: 'Connect and auth time out after 30s each',
+      out4: 'Full details: <a href="/llms.txt">llms.txt</a>',
+      preTitle: 'Preflight before sending (required)',
+      preDesc: 'Before any task that sends or reads email (especially long tasks), verify mailbox availability:',
+      preC1: '# Is an account configured?', preC2: '# Can SMTP connect and authenticate?',
+      preStop: '<strong>If either step fails, stop the task immediately</strong>, then ask the user to finish mailbox setup (config add + enable SMTP/IMAP and get an auth code) before continuing. Avoid discovering at the end of a long task that email cannot be sent.'
+    }
+  };
+
+  function pickLang() {
+    var override = new URLSearchParams(location.search).get('lang');
+    if (override === 'zh' || override === 'en') return override;
+    var langs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
+    for (var i = 0; i < langs.length; i++) if (/^zh\b/i.test(langs[i] || '')) return 'zh';
+    return 'en';
+  }
+
+  var lang = pickLang();
+  var d = DICT[lang];
+  window.__u32I18n = d;
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  document.title = d.title;
+  document.querySelector('meta[name="description"]').content = d.desc;
+  document.querySelector('meta[property="og:title"]').content = d.title;
+  document.querySelector('meta[property="og:description"]').content = d.ogDesc;
+
+  function apply() {
+    var i, el, key, value;
+    var textNodes = document.querySelectorAll('[data-i18n]');
+    for (i = 0; i < textNodes.length; i++) {
+      el = textNodes[i]; key = el.getAttribute('data-i18n'); value = d[key];
+      if (value != null) el.textContent = value;
+    }
+    var htmlNodes = document.querySelectorAll('[data-i18n-html]');
+    for (i = 0; i < htmlNodes.length; i++) {
+      el = htmlNodes[i]; key = el.getAttribute('data-i18n-html'); value = d[key];
+      if (value != null) el.innerHTML = value;
+    }
+    var ariaNodes = document.querySelectorAll('[data-i18n-aria]');
+    for (i = 0; i < ariaNodes.length; i++) {
+      el = ariaNodes[i]; key = el.getAttribute('data-i18n-aria'); value = d[key];
+      if (value != null) el.setAttribute('aria-label', value);
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply);
+  else apply();
+})();
+</script>
 </head>
 <body>
 
 <header class="hero">
   <div class="wrap">
     <div class="prompt-pill"><span class="dot"></span>Designed for AI Agents</div>
-    <h1>给 AI 用的邮件收发 CLI<br><span class="accent">npx u32-ai-email</span></h1>
-    <p class="tagline">发邮件、收邮件、多账户，一行命令搞定。JSON 输出、零交互、语义化 <span class="nowrap">exit code</span> —— AI 拿到结果直接解析。</p>
+    <h1 data-i18n-html="heroTitle">给 AI 用的邮件收发 CLI<br><span class="accent">npx u32-ai-email</span></h1>
+    <p class="tagline" data-i18n-html="tagline">发邮件、收邮件、多账户，一行命令搞定。JSON 输出、零交互、语义化 <span class="nowrap">exit code</span> —— AI 拿到结果直接解析。</p>
     <div class="hero-cta">
       <a class="btn btn-primary" href="https://www.npmjs.com/package/u32-ai-email">npm: u32-ai-email</a>
       <a class="btn btn-ghost" href="https://github.com/u32-cn/u32-ai-email">GitHub</a>
       <a class="btn btn-ghost" href="/llms.txt" target="_blank" rel="noopener">llms.txt</a>
     </div>
     <div class="hero-meta">
-      <span>零安装，Node ≥ 18</span><span>SMTP 发件</span><span>IMAP 只读收件</span><span>多账户配置</span><span>30s 超时兜底</span>
+      <span data-i18n="meta1">零安装，Node ≥ 18</span><span data-i18n="meta2">SMTP 发件</span><span data-i18n="meta3">IMAP 只读收件</span><span data-i18n="meta4">多账户配置</span><span data-i18n="meta5">30s 超时兜底</span>
     </div>
 
     <div class="terminal">
       <div class="terminal-bar"><i></i><i></i><i></i><span class="title">agent@work ~</span></div>
-      <pre><span class="cm"># 1. 添加账户（存 ~/.u32-ai-email/config.json）</span>
+      <pre><span class="cm" data-i18n="termAddAccount"># 1. 添加账户（存 ~/.u32-ai-email/config.json）</span>
 <span class="dollar">$</span> npx u32-ai-email config add default \
     --host smtp.88.com \
-    --user you@88.com --pass 授权码
+    --user you@88.com --pass <span data-i18n="termAuthCode">授权码</span>
 
-<span class="cm"># 2. 发邮件</span>
+<span class="cm" data-i18n="termSend"># 2. 发邮件</span>
 <span class="dollar">$</span> npx u32-ai-email send --to a@b.com \
-    --subject "周报" --html-file report.html \
+    --subject "<span data-i18n="termWeekly">周报</span>" --html-file report.html \
     --attach report.pdf
 
-<span class="cm"># 3. 收邮件（只读，不会动你的邮箱）</span>
+<span class="cm" data-i18n="termRead"># 3. 收邮件（只读，不会动你的邮箱）</span>
 <span class="dollar">$</span> npx u32-ai-email <span class="hl">list</span> --limit 5
 <span class="dollar">$</span> npx u32-ai-email <span class="hl">read</span> --uid 1234</pre>
     </div>
@@ -348,62 +481,62 @@
 <main>
 <section class="section wrap">
   <span class="sec-tag">AI Prompt</span>
-  <h2>复制提示词，交给 AI</h2>
-  <p class="sec-desc">把这段提示词发给 AI，让它调用本工具完成发邮件。</p>
+  <h2 data-i18n="promptH2">复制提示词，交给 AI</h2>
+  <p class="sec-desc" data-i18n="promptDesc">把这段提示词发给 AI，让它调用本工具完成发邮件。</p>
   <div class="prompt-card" data-u32-name="ai-prompt-card">
     <div class="prompt-main" data-u32-name="ai-prompt-main">
-      <h3>发邮件提示词</h3>
-      <code class="prompt-text" id="ai-prompt-text" data-u32-name="ai-prompt-text">请使用 npx u32-ai-email 发邮件至 &lt;xxx@qq.com&gt;</code>
-      <p class="prompt-note" data-u32-name="ai-prompt-note">把 <code>&lt;xxx@qq.com&gt;</code> 换成实际收件人；这是一段给 AI 的提示词，不是可直接在终端执行的命令。</p>
+      <h3 data-i18n="promptH3">发邮件提示词</h3>
+      <code class="prompt-text" id="ai-prompt-text" data-u32-name="ai-prompt-text" data-i18n="promptText">请使用 npx u32-ai-email 发邮件至 &lt;xxx@qq.com&gt;</code>
+      <p class="prompt-note" data-u32-name="ai-prompt-note" data-i18n-html="promptNote">把 <code>&lt;xxx@qq.com&gt;</code> 换成实际收件人；这是一段给 AI 的提示词，不是可直接在终端执行的命令。</p>
     </div>
-    <button type="button" class="btn-copy" id="ai-prompt-copy" data-u32-name="ai-prompt-copy" aria-label="复制发邮件提示词">一键复制</button>
+    <button type="button" class="btn-copy" id="ai-prompt-copy" data-u32-name="ai-prompt-copy" data-i18n="copy" data-i18n-aria="copyLabel" aria-label="复制发邮件提示词">一键复制</button>
   </div>
 </section>
 
 <section class="section wrap">
   <span class="sec-tag">Features</span>
-  <h2>为什么适合 AI</h2>
-  <p class="sec-desc">每一处设计都为了让 Agent 少猜、少试、少返工。</p>
+  <h2 data-i18n="featH2">为什么适合 AI</h2>
+  <p class="sec-desc" data-i18n="featDesc">每一处设计都为了让 Agent 少猜、少试、少返工。</p>
   <div class="grid">
     <div class="feature">
       <div class="f-icon t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-4 5 4 5"/><path d="M16 7l4 5-4 5"/><path d="M13 5l-2 14"/></svg></div>
-      <h3>为 AI 设计的输出</h3>
-      <p>所有命令输出 JSON、exit code 语义化（<span class="nowrap">0 成功</span> / <span class="nowrap">1 用法错</span> / <span class="nowrap">2 失败</span>），脚本直接解析，不用猜格式。</p>
+      <h3 data-i18n="feat1T">为 AI 设计的输出</h3>
+      <p data-i18n-html="feat1P">所有命令输出 JSON、exit code 语义化（<span class="nowrap">0 成功</span> / <span class="nowrap">1 用法错</span> / <span class="nowrap">2 失败</span>），脚本直接解析，不用猜格式。</p>
     </div>
     <div class="feature">
       <div class="f-icon g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4L3 11l6 2.4L11.4 20 21 4z"/><path d="M9 13.4L21 4"/></svg></div>
-      <h3>发 + 收 全覆盖</h3>
-      <p>SMTP 发件（文本 / HTML / 附件 / 抄送密送），IMAP 收件（<span class="nowrap">list / read / search / fetch</span>），收件全程只读。</p>
+      <h3 data-i18n="feat2T">发 + 收 全覆盖</h3>
+      <p data-i18n-html="feat2P">SMTP 发件（文本 / HTML / 附件 / 抄送密送），IMAP 收件（<span class="nowrap">list / read / search / fetch</span>），收件全程只读。</p>
     </div>
     <div class="feature">
       <div class="f-icon a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.6a3.4 3.4 0 00-3.4-3.4H7.4A3.4 3.4 0 004 18.4V20"/><circle cx="10" cy="7.6" r="3.6"/><path d="M20 20v-1.6a3.4 3.4 0 00-2.6-3.3"/><path d="M15.4 4.2a3.6 3.6 0 010 6.8"/></svg></div>
-      <h3>多账户</h3>
-      <p><code>config add work</code> 添加任意账户，<code>--account work</code> 一参切换，默认账户名 <code>default</code>。</p>
+      <h3 data-i18n="feat3T">多账户</h3>
+      <p data-i18n-html="feat3P"><code>config add work</code> 添加任意账户，<code>--account work</code> 一参切换，默认账户名 <code>default</code>。</p>
     </div>
     <div class="feature">
       <div class="f-icon p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5z"/></svg></div>
-      <h3>零安装即用</h3>
-      <p>零依赖，<code>npx u32-ai-email help</code> 直接用。连接与认证超时各 30 秒，不会挂死任务。</p>
+      <h3 data-i18n="feat4T">零安装即用</h3>
+      <p data-i18n-html="feat4P">零依赖，<code>npx u32-ai-email help</code> 直接用。连接与认证超时各 30 秒，不会挂死任务。</p>
     </div>
   </div>
 </section>
 
 <section class="section wrap">
   <span class="sec-tag">Commands</span>
-  <h2>命令一览</h2>
-  <p class="sec-desc">十个子命令，覆盖账户管理与收发全流程。</p>
+  <h2 data-i18n="cmdH2">命令一览</h2>
+  <p class="sec-desc" data-i18n="cmdDesc">十个子命令，覆盖账户管理与收发全流程。</p>
   <div class="table-card">
     <table>
       <thead>
-        <tr><th scope="col">命令</th><th scope="col">作用</th></tr>
+        <tr><th scope="col" data-i18n="thCmd">命令</th><th scope="col" data-i18n="thUse">作用</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>config add / list / remove / default / test</code></td><td>账户管理与 SMTP 连接验证<small>pass 打码展示，配置存 ~/.u32-ai-email/config.json</small></td></tr>
-        <tr><td><code>send</code></td><td>发邮件<small>--to --subject，正文三选一 --body / --html / --html-file，可选 --attach --cc --bcc --account</small></td></tr>
-        <tr><td><code>list</code></td><td>最近邮件<small>uid / 日期 / 发件人 / 主题 / 未读标记</small></td></tr>
-        <tr><td><code>read</code></td><td>读单封<small>--uid N，默认纯文本，--raw-html 输出 HTML 正文 + 附件清单</small></td></tr>
-        <tr><td><code>search</code></td><td>搜索邮件<small>--from / --subject / --since / --before 至少一项</small></td></tr>
-        <tr><td><code>fetch</code></td><td>下载附件<small>--uid N --out 目录</small></td></tr>
+        <tr><td><code>config add / list / remove / default / test</code></td><td><span data-i18n="cmd1">账户管理与 SMTP 连接验证</span><small data-i18n="cmd1s">pass 打码展示，配置存 ~/.u32-ai-email/config.json</small></td></tr>
+        <tr><td><code>send</code></td><td><span data-i18n="cmd2">发邮件</span><small data-i18n="cmd2s">--to --subject，正文三选一 --body / --html / --html-file，可选 --attach --cc --bcc --account</small></td></tr>
+        <tr><td><code>list</code></td><td><span data-i18n="cmd3">最近邮件</span><small data-i18n="cmd3s">uid / 日期 / 发件人 / 主题 / 未读标记</small></td></tr>
+        <tr><td><code>read</code></td><td><span data-i18n="cmd4">读单封</span><small data-i18n="cmd4s">--uid N，默认纯文本，--raw-html 输出 HTML 正文 + 附件清单</small></td></tr>
+        <tr><td><code>search</code></td><td><span data-i18n="cmd5">搜索邮件</span><small data-i18n="cmd5s">--from / --subject / --since / --before 至少一项</small></td></tr>
+        <tr><td><code>fetch</code></td><td><span data-i18n="cmd6">下载附件</span><small data-i18n="cmd6s">--uid N --out 目录</small></td></tr>
       </tbody>
     </table>
   </div>
@@ -411,27 +544,27 @@
 
 <section class="section wrap">
   <span class="sec-tag">For Agents</span>
-  <h2>AI 集成约定</h2>
-  <p class="sec-desc">如果你是 AI Agent，请按这两块执行。</p>
+  <h2 data-i18n="agentH2">AI 集成约定</h2>
+  <p class="sec-desc" data-i18n="agentDesc">如果你是 AI Agent，请按这两块执行。</p>
   <div class="duo">
     <div class="panel panel-ok">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 00-2 2v4M15 3h4a2 2 0 012 2v4M9 21H5a2 2 0 01-2-2v-4M15 21h4a2 2 0 002-2v-4"/></svg>输出约定</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 00-2 2v4M15 3h4a2 2 0 012 2v4M9 21H5a2 2 0 01-2-2v-4M15 21h4a2 2 0 002-2v-4"/></svg><span data-i18n="outTitle">输出约定</span></h3>
       <ul>
-        <li>stdout 输出 JSON，stderr 输出错误 JSON</li>
-        <li>exit code：<code>0</code> 成功 / <code>1</code> 用法错误 / <code>2</code> 网络认证发送失败</li>
-        <li>连接与认证超时各 30 秒</li>
-        <li>完整说明见 <a href="/llms.txt">llms.txt</a></li>
+        <li data-i18n="out1">stdout 输出 JSON，stderr 输出错误 JSON</li>
+        <li data-i18n-html="out2">exit code：<code>0</code> 成功 / <code>1</code> 用法错误 / <code>2</code> 网络认证发送失败</li>
+        <li data-i18n="out3">连接与认证超时各 30 秒</li>
+        <li data-i18n-html="out4">完整说明见 <a href="/llms.txt">llms.txt</a></li>
       </ul>
     </div>
     <div class="panel panel-warn">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.9 18a2 2 0 001.7 3h16.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>发邮件前的前置检查（必做）</h3>
-      <p>执行任何会收发邮件的任务（尤其长任务）之前，务必先验证邮箱可用：</p>
-      <pre><span class="pre-cm"># 有没有已配置的账户？</span>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.9 18a2 2 0 001.7 3h16.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span data-i18n="preTitle">发邮件前的前置检查（必做）</span></h3>
+      <p data-i18n="preDesc">执行任何会收发邮件的任务（尤其长任务）之前，务必先验证邮箱可用：</p>
+      <pre><span class="pre-cm" data-i18n="preC1"># 有没有已配置的账户？</span>
 $ npx u32-ai-email config list
 
-<span class="pre-cm"># SMTP 能连上并通过认证？</span>
+<span class="pre-cm" data-i18n="preC2"># SMTP 能连上并通过认证？</span>
 $ npx u32-ai-email config test</pre>
-      <p class="stop"><strong>任一步失败 → 立即停止任务</strong>，先让用户完成邮箱配置（config add + 邮箱后台开启 SMTP/IMAP 并获取授权码），避免长任务跑完才发现邮件发不出。</p>
+      <p class="stop" data-i18n-html="preStop"><strong>任一步失败 → 立即停止任务</strong>，先让用户完成邮箱配置（config add + 邮箱后台开启 SMTP/IMAP 并获取授权码），避免长任务跑完才发现邮件发不出。</p>
     </div>
   </div>
 </section>
@@ -465,10 +598,12 @@ $ npx u32-ai-email config test</pre>
     document.body.removeChild(ta);
   }
 
+  var dict = window.__u32I18n || { copy: '一键复制', copied: '已复制' };
+
   function copied() {
-    btn.textContent = '已复制';
+    btn.textContent = dict.copied;
     clearTimeout(resetTimer);
-    resetTimer = setTimeout(function () { btn.textContent = '一键复制'; }, 1500);
+    resetTimer = setTimeout(function () { btn.textContent = dict.copy; }, 1500);
   }
 
   btn.addEventListener('click', function () {

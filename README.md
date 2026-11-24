@@ -28,6 +28,12 @@ npx u32-ai-email <command>
 请使用 npx u32-ai-email 发邮件至 <xxx@qq.com>
 ```
 
+任务卡住或进度很慢时，让 AI 主动发邮件通知你（同样把 `<xxx@qq.com>` 换成实际收件人）：
+
+```text
+你在执行任务时，遇到问题或者进度特别缓慢时，可以使用 npx u32-ai-email 发邮件至 <xxx@qq.com> 通知我。
+```
+
 ## 安装与配置
 
 无需安装，直接 `npx`。首次使用先添加账户：

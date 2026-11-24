@@ -20,6 +20,14 @@ npx u32-ai-email <command>
 - IMAP 收件（list / read / search / fetch，全程只读）
 - 所有输出为 JSON，exit code 语义化（0 成功 / 2 失败），方便 AI 解析
 
+## 给 AI 的提示词
+
+把下面这段发给 AI，让它调用本工具发邮件。把 `<xxx@qq.com>` 换成实际收件人；这是一段给 AI 的提示词，不是可直接在终端执行的命令。
+
+```text
+请使用 npx u32-ai-email 发邮件至 <xxx@qq.com>
+```
+
 ## 安装与配置
 
 无需安装，直接 `npx`。首次使用先添加账户：

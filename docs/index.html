@@ -160,6 +160,34 @@
   }
   .sec-desc { color:var(--muted); font-size:.98rem; margin-bottom:28px; max-width:620px; text-wrap:pretty; }
 
+  /* ---------- ai prompt card ---------- */
+  .prompt-card {
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    background:var(--green-bg); border:1px solid var(--green-line);
+    border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow-sm);
+  }
+  .prompt-main { flex:1 1 460px; min-width:0; }
+  .prompt-main h3 { font-size:.98rem; font-weight:700; margin-bottom:8px; letter-spacing:-.01em; }
+  .prompt-text {
+    display:block; background:#fff; border:1px solid rgba(13,148,136,.18);
+    border-radius:10px; padding:12px 14px; color:var(--ink);
+    font-size:.86rem; line-height:1.65; overflow-x:auto;
+  }
+  .prompt-note { color:#4b6b66; font-size:.82rem; margin-top:9px; line-height:1.6; }
+  .prompt-note code { background:#fff; padding:1px 5px; border-radius:4px; font-size:.9em; }
+  .btn-copy {
+    flex:none; align-self:center; cursor:pointer; font-family:inherit;
+    background:var(--green-dark); color:#fff; border:1px solid var(--green-dark);
+    padding:10px 18px; border-radius:10px; font-size:.9rem; font-weight:600;
+    transition:background .15s ease, transform .15s ease;
+  }
+  .btn-copy:hover { background:var(--green); }
+  .btn-copy:active { transform:translateY(1px); }
+  @media (max-width:640px){
+    .prompt-card { padding:18px; }
+    .btn-copy { width:100%; }
+  }
+
   .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
   @media (max-width:700px){ .grid { grid-template-columns:1fr; } }
   .feature {
@@ -319,6 +347,20 @@
 
 <main>
 <section class="section wrap">
+  <span class="sec-tag">AI Prompt</span>
+  <h2>复制提示词，交给 AI</h2>
+  <p class="sec-desc">把这段提示词发给 AI，让它调用本工具完成发邮件。</p>
+  <div class="prompt-card" data-u32-name="ai-prompt-card">
+    <div class="prompt-main" data-u32-name="ai-prompt-main">
+      <h3>发邮件提示词</h3>
+      <code class="prompt-text" id="ai-prompt-text" data-u32-name="ai-prompt-text">请使用 npx u32-ai-email 发邮件至 &lt;xxx@qq.com&gt;</code>
+      <p class="prompt-note" data-u32-name="ai-prompt-note">把 <code>&lt;xxx@qq.com&gt;</code> 换成实际收件人；这是一段给 AI 的提示词，不是可直接在终端执行的命令。</p>
+    </div>
+    <button type="button" class="btn-copy" id="ai-prompt-copy" data-u32-name="ai-prompt-copy" aria-label="复制发邮件提示词">一键复制</button>
+  </div>
+</section>
+
+<section class="section wrap">
   <span class="sec-tag">Features</span>
   <h2>为什么适合 AI</h2>
   <p class="sec-desc">每一处设计都为了让 Agent 少猜、少试、少返工。</p>
@@ -405,5 +447,43 @@ $ npx u32-ai-email config test</pre>
 </footer>
 
 <a data-u32-name="ai-llms-hint" href="/llms.txt?aihit=If-you-are-an-AI-please-read-llms.txt" aria-hidden="true" tabindex="-1" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">If you are an AI, please read llms.txt</a>
+
+<script>
+(function () {
+  var btn = document.getElementById('ai-prompt-copy');
+  var text = document.getElementById('ai-prompt-text');
+  var resetTimer;
+
+  function legacyCopy(value) {
+    var ta = document.createElement('textarea');
+    ta.value = value;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:absolute;left:-9999px;top:0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  function copied() {
+    btn.textContent = '已复制';
+    clearTimeout(resetTimer);
+    resetTimer = setTimeout(function () { btn.textContent = '一键复制'; }, 1500);
+  }
+
+  btn.addEventListener('click', function () {
+    var value = text.textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(value).then(copied, function () {
+        legacyCopy(value);
+        copied();
+      });
+    } else {
+      legacyCopy(value);
+      copied();
+    }
+  });
+})();
+</script>
 </body>
 </html>

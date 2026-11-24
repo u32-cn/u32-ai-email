@@ -3,144 +3,292 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#042f2e">
 <title>u32-ai-email — 给 AI 用的邮件收发 CLI</title>
 <meta name="description" content="AI-friendly email CLI：npx u32-ai-email 直接发邮件（SMTP）、收邮件（IMAP），多账户支持，JSON 输出，专为 AI Agent 设计。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="u32-ai-email — 给 AI 用的邮件收发 CLI">
+<meta property="og:description" content="发邮件、收邮件、多账户，一行命令搞定。JSON 输出、零交互、语义化 exit code。">
+<meta property="og:url" content="https://u32-ai-email.u32.cn/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230d9488'/><path d='M8 11h16v10H8z' fill='none' stroke='%23ecfdf5' stroke-width='2' stroke-linejoin='round'/><path d='M8 12l8 6 8-6' fill='none' stroke='%23ecfdf5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 <style>
   :root {
-    --ink:#0f172a; --muted:#64748b; --bg:#ffffff;
-    --green:#0d9488; --green-dark:#0f766e; --green-bg:#f0fdfa;
+    --ink:#0f172a; --ink-2:#334155; --muted:#64748b; --bg:#ffffff;
+    --green:#0d9488; --green-dark:#0f766e; --green-bg:#f0fdfa; --green-line:#99f6e4;
     --blue:#2563eb; --blue-bg:#eff6ff;
-    --amber:#b45309; --amber-bg:#fffbeb;
-    --surface:#f8fafc; --border:#e2e8f0;
+    --violet:#7c3aed; --violet-bg:#f5f3ff;
+    --amber:#b45309; --amber-bg:#fffbeb; --amber-line:#fde68a;
+    --surface:#f8fafc; --border:#e2e8f0; --border-soft:#eef2f6;
+    --chip:#eef2f6;
     --code-bg:#0f172a; --code-fg:#e2e8f0;
     --radius:14px;
+    --shadow-sm:0 1px 2px rgba(15,23,42,.04);
+    --shadow-md:0 10px 24px -12px rgba(15,23,42,.18);
+    --shadow-lg:0 24px 60px -20px rgba(2,20,18,.55);
+    --maxw:960px;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
-  html { scroll-behavior:smooth; }
-  body { font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; color:var(--ink); background:var(--bg); line-height:1.7; -webkit-font-smoothing:antialiased; }
-  .wrap { max-width:920px; margin:0 auto; padding:0 28px; }
-  code, pre { font-family:"JetBrains Mono",Consolas,monospace; }
+  html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.7;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  code, pre, .mono {
+    font-family:ui-monospace,"SFMono-Regular","JetBrains Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    font-variant-ligatures:none;
+  }
+  ::selection { background:#99f6e4; color:#042f2e; }
+  :focus-visible { outline:2px solid #14b8a6; outline-offset:3px; border-radius:6px; }
+  .wrap { max-width:var(--maxw); margin:0 auto; padding:0 28px; }
+  @media (max-width:640px){ .wrap { padding:0 20px; } }
 
   /* ---------- hero ---------- */
   .hero {
     background:linear-gradient(160deg,#042f2e 0%,#134e4a 45%,#0f3a5f 100%);
-    color:#fff; padding:88px 0 96px; position:relative; overflow:hidden;
+    color:#fff; padding:clamp(56px,8vw,88px) 0 clamp(48px,7vw,80px);
+    position:relative; overflow:hidden; isolation:isolate;
   }
   .hero::before {
-    content:""; position:absolute; inset:0;
+    content:""; position:absolute; inset:0; z-index:-1;
     background:
-      radial-gradient(600px 300px at 85% 10%, rgba(13,148,136,.35), transparent 60%),
-      radial-gradient(500px 260px at 10% 90%, rgba(37,99,235,.28), transparent 60%);
+      radial-gradient(600px 300px at 85% 8%, rgba(13,148,136,.35), transparent 62%),
+      radial-gradient(520px 260px at 8% 92%, rgba(37,99,235,.26), transparent 62%);
     pointer-events:none;
   }
-  .hero .wrap { position:relative; }
   .prompt-pill {
-    display:inline-flex; align-items:center; gap:10px;
-    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18);
-    border-radius:999px; padding:7px 18px; font-size:.85rem; color:#99f6e4;
-    letter-spacing:.04em; margin-bottom:28px;
+    display:inline-flex; align-items:center; gap:9px;
+    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16);
+    border-radius:999px; padding:6px 15px 6px 13px;
+    font-size:.72rem; font-weight:600; color:#99f6e4;
+    letter-spacing:.14em; text-transform:uppercase;
+    margin-bottom:26px; backdrop-filter:blur(4px);
   }
-  .prompt-pill .dot { width:8px; height:8px; border-radius:50%; background:#2dd4bf; box-shadow:0 0 10px #2dd4bf; }
-  h1 { font-size:3.2rem; font-weight:800; letter-spacing:-.03em; line-height:1.15; }
-  h1 .accent { color:#5eead4; }
-  .tagline { font-size:1.25rem; color:#cbdeea; margin-top:18px; max-width:620px; }
-  .hero-cta { margin-top:36px; display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+  .prompt-pill .dot {
+    width:7px; height:7px; border-radius:50%; background:#2dd4bf;
+    box-shadow:0 0 0 3px rgba(45,212,191,.18);
+  }
+  h1 {
+    font-size:clamp(2rem,6.2vw,3.15rem); font-weight:800;
+    letter-spacing:-.035em; line-height:1.14; text-wrap:balance;
+  }
+  h1 .accent {
+    display:inline-block; font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+    font-size:.82em; letter-spacing:-.02em; color:#5eead4;
+    margin-top:.1em;
+  }
+  .nowrap { white-space:nowrap; }
+  .tagline {
+    font-size:clamp(1rem,2.2vw,1.18rem); color:#c7dceb;
+    margin-top:18px; max-width:640px; text-wrap:pretty;
+  }
+  .hero-cta { margin-top:34px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
   .btn {
-    display:inline-block; padding:11px 24px; border-radius:10px; font-size:.95rem;
-    font-weight:600; text-decoration:none; transition:transform .15s, box-shadow .15s;
+    display:inline-flex; align-items:center; gap:8px;
+    padding:10px 22px; border-radius:10px; font-size:.92rem; font-weight:600;
+    line-height:1.4; text-decoration:none; white-space:nowrap;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease;
   }
-  .btn-primary { background:#14b8a6; color:#022c22; box-shadow:0 6px 20px rgba(20,184,166,.35); }
-  .btn-primary:hover { transform:translateY(-2px); }
-  .btn-ghost { background:rgba(255,255,255,.1); color:#e2e8f0; border:1px solid rgba(255,255,255,.25); }
-  .btn-ghost:hover { background:rgba(255,255,255,.18); }
-  .hero-meta { margin-top:26px; font-size:.85rem; color:#8fb3c7; display:flex; gap:22px; flex-wrap:wrap; }
-  .hero-meta span::before { content:"✓ "; color:#5eead4; }
+  .btn-primary { background:#14b8a6; color:#022c22; box-shadow:0 8px 22px -8px rgba(20,184,166,.65); }
+  .btn-primary:hover { background:#2dd4bf; transform:translateY(-2px); box-shadow:0 12px 26px -8px rgba(20,184,166,.7); }
+  .btn-primary:active { transform:translateY(0); }
+  .btn-ghost {
+    background:rgba(255,255,255,.09); color:#e6edf3;
+    border:1px solid rgba(255,255,255,.22);
+  }
+  .btn-ghost:hover { background:rgba(255,255,255,.17); border-color:rgba(255,255,255,.34); }
+  @media (max-width:480px){
+    .hero-cta { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .hero-cta .btn { justify-content:center; padding:11px 14px; font-size:.88rem; }
+    .hero-cta .btn-primary { grid-column:1 / -1; }
+  }
+  .hero-meta {
+    margin-top:24px; font-size:.83rem; color:#93b4c8;
+    display:flex; gap:8px 20px; flex-wrap:wrap;
+  }
+  .hero-meta span { display:inline-flex; align-items:center; gap:6px; }
+  .hero-meta span::before {
+    content:""; width:13px; height:13px; flex:none;
+    background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="none" stroke="%235eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 8.5l3.2 3L13 5"/></svg>') center/contain no-repeat;
+  }
 
-  /* ---------- demo window in hero ---------- */
+  /* ---------- terminal ---------- */
   .terminal {
-    margin-top:52px; background:var(--code-bg); border-radius:var(--radius);
-    box-shadow:0 24px 60px rgba(2,20,18,.5); overflow:hidden;
-    border:1px solid rgba(255,255,255,.08);
+    margin-top:clamp(36px,5vw,52px);
+    background:var(--code-bg); border-radius:var(--radius);
+    box-shadow:var(--shadow-lg); overflow:hidden;
+    border:1px solid rgba(255,255,255,.09);
+    position:relative;
   }
-  .terminal-bar { display:flex; align-items:center; gap:8px; padding:13px 18px; background:rgba(255,255,255,.05); }
-  .terminal-bar i { width:12px; height:12px; border-radius:50%; display:block; }
+  .terminal::after {
+    content:""; position:absolute; top:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg,transparent,rgba(94,234,212,.45),transparent);
+  }
+  .terminal-bar {
+    display:flex; align-items:center; gap:7px;
+    padding:12px 18px; background:rgba(255,255,255,.05);
+    border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  .terminal-bar i { width:11px; height:11px; border-radius:50%; display:block; flex:none; }
   .terminal-bar i:nth-child(1){background:#f87171} .terminal-bar i:nth-child(2){background:#fbbf24} .terminal-bar i:nth-child(3){background:#34d399}
-  .terminal-bar .title { margin-left:10px; font-size:.78rem; color:#94a3b8; }
-  .terminal pre { padding:24px 26px; color:var(--code-fg); font-size:.88rem; line-height:1.8; overflow-x:auto; }
-  .terminal .cm { color:#64748b; }
-  .terminal .dollar { color:#5eead4; user-select:none; }
+  .terminal-bar .title { margin-left:8px; font-size:.75rem; color:#8fa3b8; letter-spacing:.02em; }
+  .terminal pre {
+    padding:22px 24px 24px; color:var(--code-fg);
+    font-size:.86rem; line-height:1.85; overflow-x:auto;
+    tab-size:2;
+  }
+  .terminal pre::-webkit-scrollbar { height:8px; }
+  .terminal pre::-webkit-scrollbar-thumb { background:#334155; border-radius:4px; }
+  .terminal pre::-webkit-scrollbar-track { background:transparent; }
+  .terminal .cm { color:#7d8ea3; }
+  .terminal .dollar { color:#5eead4; user-select:none; margin-right:2px; }
   .terminal .hl { color:#7dd3fc; }
+  @media (max-width:640px){ .terminal pre { font-size:.78rem; padding:18px 18px 20px; } }
 
   /* ---------- sections ---------- */
-  section { padding:64px 0 8px; }
+  .section { padding-block:clamp(52px,7vw,80px) 0; }
   .sec-tag {
-    display:inline-block; font-size:.75rem; font-weight:700; letter-spacing:.12em;
-    text-transform:uppercase; color:var(--green); background:var(--green-bg);
-    border:1px solid #99f6e4; border-radius:999px; padding:4px 14px; margin-bottom:14px;
+    display:inline-block; font-size:.7rem; font-weight:700; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--green-dark); background:var(--green-bg);
+    border:1px solid var(--green-line); border-radius:999px;
+    padding:4px 13px; margin-bottom:14px;
   }
-  h2 { font-size:1.7rem; font-weight:750; letter-spacing:-.02em; margin-bottom:10px; }
-  .sec-desc { color:var(--muted); margin-bottom:30px; max-width:640px; }
+  h2 {
+    font-size:clamp(1.45rem,3.6vw,1.72rem); font-weight:700;
+    letter-spacing:-.025em; line-height:1.3; margin-bottom:9px;
+  }
+  .sec-desc { color:var(--muted); font-size:.98rem; margin-bottom:28px; max-width:620px; text-wrap:pretty; }
 
-  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:18px; }
+  .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+  @media (max-width:700px){ .grid { grid-template-columns:1fr; } }
   .feature {
     background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
-    padding:26px 24px; transition:transform .15s, box-shadow .15s;
+    padding:24px 22px; box-shadow:var(--shadow-sm);
+    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
   }
-  .feature:hover { transform:translateY(-3px); box-shadow:0 12px 28px rgba(15,23,42,.07); }
+  .feature:hover { transform:translateY(-3px); box-shadow:var(--shadow-md); border-color:#d5dfe9; }
   .f-icon {
-    width:42px; height:42px; border-radius:11px; display:flex; align-items:center; justify-content:center;
-    font-size:1.2rem; margin-bottom:16px;
+    width:40px; height:40px; border-radius:11px;
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:15px;
   }
-  .f-icon.t { background:var(--blue-bg); } .f-icon.g { background:var(--green-bg); }
-  .f-icon.a { background:var(--amber-bg); } .f-icon.p { background:#f5f3ff; }
-  .feature h3 { font-size:1.05rem; margin-bottom:8px; }
-  .feature p { color:var(--muted); font-size:.92rem; }
-  .feature code { background:#e2e8f080; padding:1px 6px; border-radius:5px; font-size:.84em; color:var(--ink); }
+  .f-icon svg { width:20px; height:20px; }
+  .f-icon.t { background:var(--blue-bg); color:var(--blue); }
+  .f-icon.g { background:var(--green-bg); color:var(--green-dark); }
+  .f-icon.a { background:var(--amber-bg); color:var(--amber); }
+  .f-icon.p { background:var(--violet-bg); color:var(--violet); }
+  .feature h3 { font-size:1rem; font-weight:700; letter-spacing:-.01em; margin-bottom:7px; }
+  .feature p { color:var(--muted); font-size:.9rem; line-height:1.72; }
+  .feature code {
+    background:var(--chip); padding:1px 6px; border-radius:5px;
+    border:1px solid rgba(15,23,42,.06);
+    font-size:.86em; color:var(--ink); white-space:nowrap;
+  }
 
-  /* ---------- table card ---------- */
-  .table-card { border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
-  table { border-collapse:collapse; width:100%; font-size:.92rem; }
-  th { background:#f1f5f9; text-align:left; padding:13px 20px; font-size:.8rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); }
-  td { padding:13px 20px; border-bottom:1px solid var(--border); vertical-align:top; }
-  tr:last-child td { border-bottom:none; }
-  tr:hover td { background:#f8fafc; }
-  td:first-child { white-space:nowrap; }
-  td code { background:var(--green-bg); color:var(--green-dark); padding:2px 8px; border-radius:6px; font-size:.85em; font-weight:600; }
-  td small { display:block; color:var(--muted); margin-top:2px; }
+  /* ---------- table ---------- */
+  .table-card {
+    border:1px solid var(--border); border-radius:var(--radius);
+    overflow:hidden; box-shadow:var(--shadow-sm); background:#fff;
+  }
+  table { border-collapse:collapse; width:100%; font-size:.9rem; }
+  thead th {
+    background:#f1f5f9; text-align:left; padding:12px 20px;
+    font-size:.72rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--muted); border-bottom:1px solid var(--border); white-space:nowrap;
+  }
+  tbody td { padding:14px 20px; border-bottom:1px solid var(--border-soft); vertical-align:top; }
+  tbody tr:last-child td { border-bottom:none; }
+  tbody tr { transition:background .12s ease; }
+  tbody tr:hover { background:#fafcfd; }
+  tbody td:first-child { width:38%; }
+  td small { display:block; color:#5b6b7e; font-size:.82rem; margin-top:3px; line-height:1.6; }
+  td code {
+    display:inline-block; background:var(--green-bg); color:var(--green-dark);
+    padding:2px 8px; border-radius:6px; font-size:.84em; font-weight:600;
+    border:1px solid rgba(13,148,136,.12);
+  }
+  @media (max-width:680px){
+    .table-card { border:none; background:none; box-shadow:none; overflow:visible; }
+    table, tbody, tr, td { display:block; width:100%; }
+    thead { display:none; }
+    tbody tr {
+      border:1px solid var(--border); border-radius:12px; background:#fff;
+      padding:14px 16px; margin-bottom:10px; box-shadow:var(--shadow-sm);
+    }
+    tbody tr:last-child { margin-bottom:0; }
+    tbody tr:hover { background:#fff; }
+    tbody td { border:none; padding:0; width:100% !important; }
+    tbody td:first-child { margin-bottom:5px; }
+    tbody td small { margin-top:4px; }
+  }
 
-  /* ---------- contract + preflight ---------- */
-  .duo { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
-  @media (max-width:760px){ .duo { grid-template-columns:1fr; } }
-  .panel { border-radius:var(--radius); padding:28px 26px; border:1px solid var(--border); }
-  .panel h3 { font-size:1.05rem; margin-bottom:14px; display:flex; align-items:center; gap:9px; }
+  /* ---------- duo panels ---------- */
+  .duo { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+  @media (max-width:780px){ .duo { grid-template-columns:1fr; } }
+  .duo > * { min-width:0; }
+  .panel { border-radius:var(--radius); padding:26px 24px; border:1px solid var(--border); min-width:0; }
+  .panel h3 {
+    font-size:1rem; font-weight:700; margin-bottom:14px;
+    display:flex; align-items:center; gap:9px; letter-spacing:-.01em;
+  }
+  .panel h3 svg { width:18px; height:18px; flex:none; }
   .panel ul { list-style:none; }
-  .panel li { padding:6px 0 6px 26px; position:relative; color:#334155; font-size:.93rem; }
-  .panel li::before { content:""; position:absolute; left:0; top:14px; width:16px; height:16px; border-radius:50%;
-    background:var(--green-bg) url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="%230d9488" d="M6.5 11 3.8 8.3l1-1L6.5 9l4.2-4.2 1 1z"/></svg>') center/contain no-repeat; }
-  .panel li code { background:#e2e8f080; padding:1px 6px; border-radius:5px; font-size:.85em; }
-  .panel li a { color:var(--green-dark); font-weight:600; }
-  .panel-warn { background:var(--amber-bg); border-color:#fde68a; }
-  .panel-warn h3 { color:var(--amber); }
-  .panel-warn p { font-size:.93rem; color:#78350f; margin-bottom:14px; }
-  .panel-warn pre { background:#451a03; color:#fef3c7; border-radius:10px; padding:16px 18px; font-size:.83rem; line-height:1.7; overflow-x:auto; }
-  .panel-warn .stop { margin-top:14px; font-size:.9rem; color:#78350f; }
-  .panel-warn .stop strong { color:#b91c1c; }
+  .panel li {
+    padding:6px 0 6px 26px; position:relative;
+    color:var(--ink-2); font-size:.91rem; line-height:1.72;
+  }
+  .panel li + li { border-top:1px solid rgba(15,23,42,.05); }
+  .panel li::before {
+    content:""; position:absolute; left:0; top:12px; width:16px; height:16px; border-radius:50%;
+    background:var(--green-bg) url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="none" stroke="%230f766e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 8.4l2.6 2.4L12 5.2"/></svg>') center/10px no-repeat;
+  }
+  .panel li code {
+    background:var(--chip); padding:1px 6px; border-radius:5px;
+    border:1px solid rgba(15,23,42,.06);
+    font-size:.86em; color:var(--ink); white-space:nowrap;
+  }
+  .panel li a { color:var(--green-dark); font-weight:600; text-decoration:none; border-bottom:1px solid rgba(13,148,136,.3); }
+  .panel li a:hover { border-bottom-color:var(--green-dark); }
   .panel-ok { background:var(--surface); }
+  .panel-warn { background:var(--amber-bg); border-color:var(--amber-line); }
+  .panel-warn h3 { color:var(--amber); }
+  .panel-warn p { font-size:.91rem; color:#7c3d0a; margin-bottom:12px; line-height:1.72; }
+  .panel-warn pre {
+    background:#451a03; color:#fef3c7; border-radius:10px;
+    padding:15px 17px; font-size:.82rem; line-height:1.75;
+    overflow-x:auto; max-width:100%; margin-bottom:14px;
+  }
+  .panel-warn pre .pre-cm { color:#d8b184; }
+  .panel-warn .stop { margin-bottom:0; font-size:.89rem; color:#7c3d0a; }
+  .panel-warn .stop strong { color:#b91c1c; }
 
   /* ---------- footer ---------- */
-  footer { margin-top:80px; padding:36px 0; border-top:1px solid var(--border); }
-  footer .wrap { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; color:var(--muted); font-size:.85rem; }
+  footer {
+    margin-top:clamp(56px,8vw,88px); padding:30px 0;
+    border-top:1px solid var(--border);
+  }
+  footer .wrap {
+    display:flex; justify-content:space-between; align-items:center;
+    flex-wrap:wrap; gap:10px 20px; color:var(--muted); font-size:.84rem;
+  }
   footer a { color:var(--green-dark); text-decoration:none; font-weight:600; }
-  footer a:hover { text-decoration:underline; }
+  footer a:hover { text-decoration:underline; text-underline-offset:3px; }
+  footer .sep { color:#cbd5e1; margin:0 4px; }
+
+  @media (prefers-reduced-motion: reduce){
+    html { scroll-behavior:auto; }
+    *, *::before, *::after { transition:none !important; animation:none !important; }
+  }
 </style>
 </head>
 <body>
 
-<div class="hero">
+<header class="hero">
   <div class="wrap">
-    <div class="prompt-pill"><span class="dot"></span>DESIGNED FOR AI AGENTS</div>
+    <div class="prompt-pill"><span class="dot"></span>Designed for AI Agents</div>
     <h1>给 AI 用的邮件收发 CLI<br><span class="accent">npx u32-ai-email</span></h1>
-    <p class="tagline">发邮件、收邮件、多账户，一行命令搞定。JSON 输出、零交互、语义化 exit code——AI 拿到结果直接解析。</p>
+    <p class="tagline">发邮件、收邮件、多账户，一行命令搞定。JSON 输出、零交互、语义化 <span class="nowrap">exit code</span> —— AI 拿到结果直接解析。</p>
     <div class="hero-cta">
       <a class="btn btn-primary" href="https://www.npmjs.com/package/u32-ai-email">npm: u32-ai-email</a>
       <a class="btn btn-ghost" href="https://github.com/u32-cn/u32-ai-email">GitHub</a>
@@ -152,73 +300,80 @@
 
     <div class="terminal">
       <div class="terminal-bar"><i></i><i></i><i></i><span class="title">agent@work ~</span></div>
-      <pre><span class="cm"># 1. 添加账户（一次即可，存 ~/.u32-ai-email/config.json）</span>
+      <pre><span class="cm"># 1. 添加账户（存 ~/.u32-ai-email/config.json）</span>
 <span class="dollar">$</span> npx u32-ai-email config add default \
-    --host smtp.88.com --user you@88.com --pass 授权码
+    --host smtp.88.com \
+    --user you@88.com --pass 授权码
 
 <span class="cm"># 2. 发邮件</span>
-<span class="dollar">$</span> npx u32-ai-email send --to a@b.com --subject "周报" \
-    --html-file report.html --attach report.pdf
+<span class="dollar">$</span> npx u32-ai-email send --to a@b.com \
+    --subject "周报" --html-file report.html \
+    --attach report.pdf
 
 <span class="cm"># 3. 收邮件（只读，不会动你的邮箱）</span>
 <span class="dollar">$</span> npx u32-ai-email <span class="hl">list</span> --limit 5
 <span class="dollar">$</span> npx u32-ai-email <span class="hl">read</span> --uid 1234</pre>
     </div>
   </div>
-</div>
+</header>
 
-<section class="wrap">
+<main>
+<section class="section wrap">
   <span class="sec-tag">Features</span>
   <h2>为什么适合 AI</h2>
   <p class="sec-desc">每一处设计都为了让 Agent 少猜、少试、少返工。</p>
   <div class="grid">
     <div class="feature">
-      <div class="f-icon t">🤖</div>
+      <div class="f-icon t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-4 5 4 5"/><path d="M16 7l4 5-4 5"/><path d="M13 5l-2 14"/></svg></div>
       <h3>为 AI 设计的输出</h3>
-      <p>所有命令输出 JSON、exit code 语义化（0 成功 / 1 用法错 / 2 失败），脚本直接解析，不用猜格式。</p>
+      <p>所有命令输出 JSON、exit code 语义化（<span class="nowrap">0 成功</span> / <span class="nowrap">1 用法错</span> / <span class="nowrap">2 失败</span>），脚本直接解析，不用猜格式。</p>
     </div>
     <div class="feature">
-      <div class="f-icon g">📤</div>
+      <div class="f-icon g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4L3 11l6 2.4L11.4 20 21 4z"/><path d="M9 13.4L21 4"/></svg></div>
       <h3>发 + 收 全覆盖</h3>
-      <p>SMTP 发件（文本 / HTML / 附件 / 抄送密送），IMAP 收件（list / read / search / fetch），收件全程只读。</p>
+      <p>SMTP 发件（文本 / HTML / 附件 / 抄送密送），IMAP 收件（<span class="nowrap">list / read / search / fetch</span>），收件全程只读。</p>
     </div>
     <div class="feature">
-      <div class="f-icon a">👥</div>
+      <div class="f-icon a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.6a3.4 3.4 0 00-3.4-3.4H7.4A3.4 3.4 0 004 18.4V20"/><circle cx="10" cy="7.6" r="3.6"/><path d="M20 20v-1.6a3.4 3.4 0 00-2.6-3.3"/><path d="M15.4 4.2a3.6 3.6 0 010 6.8"/></svg></div>
       <h3>多账户</h3>
-      <p><code>config add work --host ...</code> 添加任意账户，<code>--account work</code> 一参切换，默认账户名 <code>default</code>。</p>
+      <p><code>config add work</code> 添加任意账户，<code>--account work</code> 一参切换，默认账户名 <code>default</code>。</p>
     </div>
     <div class="feature">
-      <div class="f-icon p">⚡</div>
+      <div class="f-icon p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5z"/></svg></div>
       <h3>零安装即用</h3>
-      <p>不需要装任何东西，<code>npx u32-ai-email help</code> 即用。连接与认证超时各 30 秒，不会挂死任务。</p>
+      <p>零依赖，<code>npx u32-ai-email help</code> 直接用。连接与认证超时各 30 秒，不会挂死任务。</p>
     </div>
   </div>
 </section>
 
-<section class="wrap">
+<section class="section wrap">
   <span class="sec-tag">Commands</span>
   <h2>命令一览</h2>
   <p class="sec-desc">十个子命令，覆盖账户管理与收发全流程。</p>
   <div class="table-card">
     <table>
-      <tr><th>命令</th><th>作用</th></tr>
-      <tr><td><code>config add / list / remove / default / test</code></td><td>账户管理与 SMTP 连接验证<small>pass 打码展示，配置存 ~/.u32-ai-email/config.json</small></td></tr>
-      <tr><td><code>send</code></td><td>发邮件<small>--to --subject，正文三选一 --body / --html / --html-file，可选 --attach --cc --bcc --account</small></td></tr>
-      <tr><td><code>list</code></td><td>最近邮件<small>uid / 日期 / 发件人 / 主题 / 未读标记</small></td></tr>
-      <tr><td><code>read</code></td><td>读单封<small>--uid N，默认纯文本，--raw-html 输出 HTML 正文 + 附件清单</small></td></tr>
-      <tr><td><code>search</code></td><td>搜索邮件<small>--from / --subject / --since / --before 至少一项</small></td></tr>
-      <tr><td><code>fetch</code></td><td>下载附件<small>--uid N --out 目录</small></td></tr>
+      <thead>
+        <tr><th scope="col">命令</th><th scope="col">作用</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>config add / list / remove / default / test</code></td><td>账户管理与 SMTP 连接验证<small>pass 打码展示，配置存 ~/.u32-ai-email/config.json</small></td></tr>
+        <tr><td><code>send</code></td><td>发邮件<small>--to --subject，正文三选一 --body / --html / --html-file，可选 --attach --cc --bcc --account</small></td></tr>
+        <tr><td><code>list</code></td><td>最近邮件<small>uid / 日期 / 发件人 / 主题 / 未读标记</small></td></tr>
+        <tr><td><code>read</code></td><td>读单封<small>--uid N，默认纯文本，--raw-html 输出 HTML 正文 + 附件清单</small></td></tr>
+        <tr><td><code>search</code></td><td>搜索邮件<small>--from / --subject / --since / --before 至少一项</small></td></tr>
+        <tr><td><code>fetch</code></td><td>下载附件<small>--uid N --out 目录</small></td></tr>
+      </tbody>
     </table>
   </div>
 </section>
 
-<section class="wrap">
+<section class="section wrap">
   <span class="sec-tag">For Agents</span>
   <h2>AI 集成约定</h2>
   <p class="sec-desc">如果你是 AI Agent，请按这两块执行。</p>
   <div class="duo">
     <div class="panel panel-ok">
-      <h3>📐 输出约定</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 00-2 2v4M15 3h4a2 2 0 012 2v4M9 21H5a2 2 0 01-2-2v-4M15 21h4a2 2 0 002-2v-4"/></svg>输出约定</h3>
       <ul>
         <li>stdout 输出 JSON，stderr 输出错误 JSON</li>
         <li>exit code：<code>0</code> 成功 / <code>1</code> 用法错误 / <code>2</code> 网络认证发送失败</li>
@@ -227,22 +382,28 @@
       </ul>
     </div>
     <div class="panel panel-warn">
-      <h3>⚠️ 发邮件前的前置检查（必做）</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.9 18a2 2 0 001.7 3h16.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>发邮件前的前置检查（必做）</h3>
       <p>执行任何会收发邮件的任务（尤其长任务）之前，务必先验证邮箱可用：</p>
-      <pre>$ npx u32-ai-email config list   # 已有账户？
-$ npx u32-ai-email config test   # SMTP 认证通过？</pre>
+      <pre><span class="pre-cm"># 有没有已配置的账户？</span>
+$ npx u32-ai-email config list
+
+<span class="pre-cm"># SMTP 能连上并通过认证？</span>
+$ npx u32-ai-email config test</pre>
       <p class="stop"><strong>任一步失败 → 立即停止任务</strong>，先让用户完成邮箱配置（config add + 邮箱后台开启 SMTP/IMAP 并获取授权码），避免长任务跑完才发现邮件发不出。</p>
     </div>
   </div>
 </section>
+</main>
 
 <footer>
   <div class="wrap">
     <div>u32-ai-email · MIT License</div>
-    <div><a href="https://github.com/u32-cn/u32-ai-email">GitHub</a> · <a href="https://www.npmjs.com/package/u32-ai-email">npm</a> · <a href="/llms.txt" target="_blank" rel="noopener">llms.txt</a></div>
+    <nav>
+      <a href="https://github.com/u32-cn/u32-ai-email">GitHub</a><span class="sep">·</span><a href="https://www.npmjs.com/package/u32-ai-email">npm</a><span class="sep">·</span><a href="/llms.txt" target="_blank" rel="noopener">llms.txt</a>
+    </nav>
   </div>
 </footer>
 
-<a data-u32-name="ai-llms-hint" href="/llms.txt?aihit=If-you-are-an-AI-please-read-llms.txt"> </a>
+<a data-u32-name="ai-llms-hint" href="/llms.txt?aihit=If-you-are-an-AI-please-read-llms.txt" aria-hidden="true" tabindex="-1" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">If you are an AI, please read llms.txt</a>
 </body>
 </html>
